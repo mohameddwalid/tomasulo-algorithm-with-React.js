@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const Tomasulo = () => {
   // Individual number of rows for each station
-  const [addSubFloatRows, setAddSubFloatRows] = useState(3); // Default: 3 rows
+  const [addSubFloatRows, setAddSubFloatRows] = useState(3);
   const [mulDivFloatRows, setMulDivFloatRows] = useState(3);
   const [intAddSubRows, setIntAddSubRows] = useState(3);
   const [loadRows, setLoadRows] = useState(3);
@@ -19,7 +19,12 @@ const Tomasulo = () => {
   const [instructions, setInstructions] = useState([]);
   const [inputInstructions, setInputInstructions] = useState('');
   const [instructionFile, setInstructionFile] = useState(null);
-  const [latencies, setLatencies] = useState({}); // Latency state
+  const [latencies, setLatencies] = useState({});
+  const [registerFile, setRegisterFile] = useState([]);
+  
+  // Simulation state
+  const [cycle, setCycle] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
 
   const opcodes = [
     'DADDI', 'DSUBI', 'ADD.D', 'ADD.S', 'SUB.D', 'SUB.S',
@@ -84,14 +89,28 @@ const Tomasulo = () => {
     const lines = inputInstructions.split('\n');
     const parsedInstructions = lines.map((line) => {
       const parts = line.trim().split(' ');
-      if (parts.length === 4) {
-        return { instruction: line, value: '' };
+      if (parts.length >= 3 && parts.length <= 4) {
+        return { instruction: line.trim(), value: '' };
       }
       return null;
     }).filter(Boolean);
-
-    setInstructions([...instructions, ...parsedInstructions]);
-    console.log(parsedInstructions);
+  
+    setInstructions((prevInstructions) => [...prevInstructions, ...parsedInstructions]);
+  
+    const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
+    const uniqueRegisters = [...new Set(allRegisters)];
+  
+    setRegisterFile((prevRegisterFile) => {
+      const existingRegisterNames = new Set(prevRegisterFile.map((reg) => reg.regname));
+      const newRegisterFile = uniqueRegisters
+        .filter((reg) => !existingRegisterNames.has(reg))
+        .map((reg) => ({
+          regname: reg,
+          qi: 0,
+          value: 0,
+        }));
+      return [...prevRegisterFile, ...newRegisterFile];
+    });
   };
 
   const handleFileInput = (event) => {
@@ -106,14 +125,29 @@ const Tomasulo = () => {
       const parsedInstructions = lines.map((line) => {
         const cleanLine = line.replace(/\r/g, '');
         const parts = cleanLine.trim().split(' ');
-        if (parts.length === 4) {
+        if (parts.length >= 3 && parts.length <= 4) {
           return { instruction: cleanLine, value: '' };
         }
+        
         return null;
       }).filter(Boolean);
   
-      setInstructions([...instructions, ...parsedInstructions]);
-      console.log(parsedInstructions);
+      setInstructions((prevInstructions) => [...prevInstructions, ...parsedInstructions]);
+  
+      const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
+      const uniqueRegisters = [...new Set(allRegisters)];
+  
+      setRegisterFile((prevRegisterFile) => {
+        const existingRegisterNames = new Set(prevRegisterFile.map((reg) => reg.regname));
+        const newRegisterFile = uniqueRegisters
+          .filter((reg) => !existingRegisterNames.has(reg))
+          .map((reg) => ({
+            regname: reg,
+            qi: 0,
+            value: 0,
+          }));
+        return [...prevRegisterFile, ...newRegisterFile];
+      });
     };
   
     if (file) {
@@ -128,7 +162,6 @@ const Tomasulo = () => {
       return { ...inst, value: latency };
     });
     setInstructions(updatedInstructions);
-    console.log(updatedInstructions);
   };
 
   const handleLatencyChange = (opcode, latency) => {
@@ -154,11 +187,70 @@ const Tomasulo = () => {
     ));
   };
 
+  const startSimulation = () => {
+    setIsRunning(true);
+    setCycle(0);
+  };
+
+  const nextCycle = () => {
+    if (isRunning) {
+      setCycle((prevCycle) => prevCycle + 1);
+    }
+  };
+
+  const simulateCycle = () => {
+    issueInstructions();
+    executeInstructions();
+    writebackResults();
+  };
+
+  const issueInstructions = () => {
+    for (let i = 0; i < instructions.length; i++) {
+      const inst = instructions[i];
+      if (inst.value === '') continue; // Skip if latency not set
+      const availableStation = addSubFloat.findIndex(station => !station.busy);
+      if (availableStation !== -1) {
+        const { opcode, vj, vk } = parseInstruction(inst.instruction);
+        addSubFloat[availableStation] = {
+          busy: true,
+          opcode,
+          vj,
+          vk,
+          qj: '',
+          qk: '',
+          A: '',
+        };
+        setAddSubFloat([...addSubFloat]);
+        instructions[i].issued = true;
+      }
+    }
+  };
+
+  const executeInstructions = () => {
+    // Implement execution logic here
+  };
+
+  const writebackResults = () => {
+    // Implement writeback logic here
+  };
+
+  useEffect(() => {
+    if (isRunning) {
+      simulateCycle();
+    }
+  }, [cycle, isRunning]);
+
+  const parseInstruction = (instruction) => {
+    const parts = instruction.split(' ');
+    const opcode = parts[0];
+    const vj = parts[1]; // Assuming the second part is vj
+    const vk = parts[2]; // Assuming the third part is vk
+    return { opcode, vj, vk };
+  };
+
   return (
     <div>
       <h1>Tomasulo Algorithm - Reservation Stations</h1>
-
-      {/* Add/Sub Float Table */}
       <div>
         <h2>Add/Sub Float Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -183,7 +275,6 @@ const Tomasulo = () => {
         </table>
       </div>
 
-      {/* Mul/Div Float Table */}
       <div>
         <h2>Mul/Div Float Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -208,7 +299,6 @@ const Tomasulo = () => {
         </table>
       </div>
 
-      {/* Integer Add/Sub Table */}
       <div>
         <h2>Integer Add/Sub Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -233,7 +323,6 @@ const Tomasulo = () => {
         </table>
       </div>
 
-      {/* Load Table */}
       <div>
         <h2>Load Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -253,7 +342,6 @@ const Tomasulo = () => {
         </table>
       </div>
 
-      {/* Store Table */}
       <div>
         <h2>Store Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -274,8 +362,7 @@ const Tomasulo = () => {
         </table>
       </div>
 
-      {/* Input Instructions */}
-      <div>
+      <div >
         <h2>Input Instructions</h2>
         <textarea
           rows="5"
@@ -290,7 +377,6 @@ const Tomasulo = () => {
         <input type="file" accept=".txt" onChange={handleFileInput} />
       </div>
 
-      {/* Latency Input */}
       <div>
         <h2>Set Latencies</h2>
         {opcodes.map((opcode) => (
@@ -306,7 +392,6 @@ const Tomasulo = () => {
         <button onClick={handleLatencyInput}>Apply Latencies</button>
       </div>
 
-      {/* Render Instruction Table */}
       <div>
         <h2>Instructions with Latencies</h2>
         <table style={tableStyle}>
@@ -325,6 +410,34 @@ const Tomasulo = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div>
+        <h2>Register File</h2>
+        <table style={tableStyle}>
+          <thead>
+            <tr>
+              <th style={tableHeaderStyle}>Register Name</th>
+              <th style={tableHeaderStyle}>Qi</th>
+              <th style={tableHeaderStyle}>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {registerFile.map((reg, index) => (
+              <tr key={index}>
+                <td style={tableCellStyle}>{reg.regname}</td>
+                <td style={tableCellStyle}>{reg.qi}</td>
+                <td style={tableCellStyle}>{reg.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h2>Current Cycle: {cycle}</h2>
+        <button onClick={startSimulation}>Start Simulation</button>
+        <button onClick={nextCycle}>Next Cycle</button>
       </div>
     </div>
   );

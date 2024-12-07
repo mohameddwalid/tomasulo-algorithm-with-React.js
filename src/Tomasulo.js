@@ -7,6 +7,8 @@ const Tomasulo = () => {
   const [intAddSubRows, setIntAddSubRows] = useState(3);
   const [loadRows, setLoadRows] = useState(3);
   const [storeRows, setStoreRows] = useState(3);
+  const [cacheSize, setCacheSize] = useState(3);
+  const [blockSize, setBlockSize] = useState(3);
 
   // Reservation station states
   const [addSubFloat, setAddSubFloat] = useState([]);
@@ -14,7 +16,14 @@ const Tomasulo = () => {
   const [intAddSub, setIntAddSub] = useState([]);
   const [load, setLoad] = useState([]);
   const [store, setStore] = useState([]);
+  const [dataBus, setDataBus] = useState([
+    {
+      tag: '',
+      value: ''
+    }
 
+  ]);
+ console.log(dataBus);
   // Instructions state
   const [instructions, setInstructions] = useState([]);
   const [inputInstructions, setInputInstructions] = useState('');
@@ -34,9 +43,34 @@ const Tomasulo = () => {
 
   useEffect(() => {
     initializeTables();
-  }, [addSubFloatRows, mulDivFloatRows, intAddSubRows, loadRows, storeRows]);
+  }, [addSubFloatRows, mulDivFloatRows, intAddSubRows, loadRows, storeRows,cacheSize,blockSize]);
 
   const initializeTables = () => {
+
+
+    const block = Array.from({ length: parseInt(blockSize) }, () => ({
+      address: '',
+      value: '',
+    }));
+
+    const cache = Array.from({ length: parseInt(cacheSize) }, () => ({
+      block,
+
+
+    }));
+
+    
+    
+
+    
+
+
+    console.log(cache);
+    console.log(block);
+
+
+
+
     const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, () => ({
       busy: false,
       opcode: '',
@@ -46,6 +80,7 @@ const Tomasulo = () => {
       qk: '',
       A: '',
     }));
+    console.log(emptyAddSubFloat);
 
     const emptyMulDivFloat = Array.from({ length: parseInt(mulDivFloatRows) }, () => ({
       busy: false,
@@ -92,8 +127,13 @@ const Tomasulo = () => {
       if (parts.length >= 3 && parts.length <= 4) {
         return { instruction: line.trim(), value: '' };
       }
+
+      
+      
       return null;
     }).filter(Boolean);
+
+    console.log(parsedInstructions);
   
     setInstructions((prevInstructions) => [...prevInstructions, ...parsedInstructions]);
   
@@ -251,6 +291,22 @@ const Tomasulo = () => {
   return (
     <div>
       <h1>Tomasulo Algorithm - Reservation Stations</h1>
+      <div>
+          <label>Cache Size: </label>
+          <input
+            type="number"
+            value={cacheSize}
+            onChange={(e) => setCacheSize(e.target.value)}
+          />
+        </div>
+        <div>
+          <label>Block Size: </label>
+          <input
+            type="number"
+            value={blockSize}
+            onChange={(e) => setBlockSize(e.target.value)}
+          />
+        </div>
       <div>
         <h2>Add/Sub Float Reservation Station</h2>
         <label>Number of Rows: </label>

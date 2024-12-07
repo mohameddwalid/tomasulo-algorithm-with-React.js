@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const Tomasulo = () => {
+  let clock=0;
+  let flag = true;
+
   // Individual number of rows for each station
   const [addSubFloatRows, setAddSubFloatRows] = useState(3);
   const [mulDivFloatRows, setMulDivFloatRows] = useState(3);
@@ -21,12 +24,11 @@ const Tomasulo = () => {
       tag: '',
       value: ''
     }
-
   ]);
- console.log(dataBus);
   // Instructions state
   const [instructions, setInstructions] = useState([]);
   const [inputInstructions, setInputInstructions] = useState('');
+  const [parsedInstructions22, setParsedInstructions22] = useState([]);
   const [instructionFile, setInstructionFile] = useState(null);
   const [latencies, setLatencies] = useState({});
   const [registerFile, setRegisterFile] = useState([]);
@@ -45,9 +47,79 @@ const Tomasulo = () => {
     initializeTables();
   }, [addSubFloatRows, mulDivFloatRows, intAddSubRows, loadRows, storeRows,cacheSize,blockSize]);
 
+  function AssemblyTranslate(instruction) {
+    let parts = instruction.trim().split(/\s+/);    
+    let opcode = parts[0];
+    let args = parts.slice(1); // For any arguments following the opcode
+
+    if (opcode === 'DADDI') {
+
+        // Insert logic for DADDI
+        return "DADDI instruction translated";
+    } else if (opcode === 'DSUBI') {
+        // Insert logic for DSUBI
+        return "DSUBI instruction translated";
+    } else if (opcode === 'ADD.D') {
+        // Insert logic for ADD.D
+        return "ADD.D instruction translated";
+    } else if (opcode === 'ADD.S') {
+        // Insert logic for ADD.S
+        return "ADD.S instruction translated";
+    } else if (opcode === 'SUB.D') {
+        // Insert logic for SUB.D
+        return "SUB.D instruction translated";
+    } else if (opcode === 'SUB.S') {
+        // Insert logic for SUB.S
+        return "SUB.S instruction translated";
+    } else if (opcode === 'MUL.D') {
+        // Insert logic for MUL.D
+        return "MUL.D instruction translated";
+    } else if (opcode === 'MUL.S') {
+        // Insert logic for MUL.S
+        return "MUL.S instruction translated";
+    } else if (opcode === 'DIV.D') {
+        // Insert logic for DIV.D
+        return "DIV.D instruction translated";
+    } else if (opcode === 'DIV.S') {
+        // Insert logic for DIV.S
+        return "DIV.S instruction translated";
+    } else if (opcode === 'LW') {
+        // Insert logic for LW
+        return "LW instruction translated";
+    } else if (opcode === 'LD') {
+        // Insert logic for LD
+        return "LD instruction translated";
+    } else if (opcode === 'L.S') {
+        // Insert logic for L.S
+        return "L.S instruction translated";
+    } else if (opcode === 'L.D') {
+        // Insert logic for L.D
+        return "L.D instruction translated";
+    } else if (opcode === 'SW') {
+        // Insert logic for SW
+        return "SW instruction translated";
+    } else if (opcode === 'SD') {
+        // Insert logic for SD
+        return "SD instruction translated";
+    } else if (opcode === 'S.S') {
+        // Insert logic for S.S
+        return "S.S instruction translated";
+    } else if (opcode === 'S.D') {
+        // Insert logic for S.D
+        return "S.D instruction translated";
+    } else if (opcode === 'BNE') {
+        // Insert logic for BNE
+        return "BNE instruction translated";
+    } else if (opcode === 'BEQ') {
+        // Insert logic for BEQ
+        return "BEQ instruction translated";
+    } else {
+        // If opcode is not recognized
+        return null;
+    }
+}
+
   const initializeTables = () => {
-
-
     const block = Array.from({ length: parseInt(blockSize) }, () => ({
       address: '',
       value: '',
@@ -71,7 +143,8 @@ const Tomasulo = () => {
 
 
 
-    const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, () => ({
+    const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, (_, index) => ({
+      name: `A${index}`,
       busy: false,
       opcode: '',
       vj: '',
@@ -122,8 +195,12 @@ const Tomasulo = () => {
 
   const handleTextInput = () => {
     const lines = inputInstructions.split('\n');
+    
     const parsedInstructions = lines.map((line) => {
+      // console.log("line",line);      
       const parts = line.trim().split(' ');
+      // console.log("parts",parts);
+      
       if (parts.length >= 3 && parts.length <= 4) {
         return { instruction: line.trim(), value: '' };
       }
@@ -133,9 +210,10 @@ const Tomasulo = () => {
       return null;
     }).filter(Boolean);
 
-    console.log(parsedInstructions);
+// console.log(parsedInstructions);
+
   
-    setInstructions((prevInstructions) => [...prevInstructions, ...parsedInstructions]);
+    setInstructions((prevInstructions) => [parsedInstructions]);
   
     const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
     const uniqueRegisters = [...new Set(allRegisters)];
@@ -152,6 +230,7 @@ const Tomasulo = () => {
       return [...prevRegisterFile, ...newRegisterFile];
     });
   };
+// console.log("ins",instructions);
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
@@ -194,6 +273,65 @@ const Tomasulo = () => {
       reader.readAsText(file);
     }
   };
+  function algorithim() {
+    // console.log("Instructions",instructions);
+
+    for(let i=0;i<instructions.length;i++){
+      let inst = instructions[i][0].instruction;
+      // console.log("inst:  ",inst);
+      let parts = inst.trim().split(/\s+/);    
+      let opcode = parts[0];
+      // console.log("Opcode",opcode);
+
+      if (opcode === 'DADDI'  || opcode === 'ADD.S' ||opcode === 'ADD.D' || opcode === 'SUB.S' || opcode === 'SUB.D'||opcode === 'DSUBI' ) {
+        // Insert logic for DADDI
+              for (let i = 0; i < addSubFloat.length; i++) {
+                if (!addSubFloat[i].busy) {
+                  for (let i = 0; i < registerFile.length; i++) {        
+                    if (registerFile[i].regname === parts[1] ) {
+                      if( registerFile[i].qi !== 0){
+                        addSubFloat[i].busy = true;
+                        addSubFloat[i].vj = registerFile[i].value;
+                      }
+                      else{
+                        flag = false;
+                      }
+                    } 
+                    if (registerFile[i].regname === parts[2]) {
+                      if(registerFile[i].qi !== 0){
+                        addSubFloat[i].busy = true;
+                        addSubFloat[i].vk = registerFile[i].value;
+                      }
+                      else{
+                        flag = false;
+                      }
+                    }
+                  }  
+                  break;
+                }
+              }
+              // console.log("DADDI instruction translated");
+              // setAddSubFloat((prevAddSubFloat) => [...prevAddSubFloat, { busy: true, opcode: '', vj: '', vk: '', qj: '', qk: '', A: '' }]);
+   
+    } else if (opcode === 'MUL.S' || opcode === 'MUL.D' || opcode === 'DIV.S' || opcode === 'DIV.D') {
+        // Insert logic for MUL.S
+        // console.log("MUL.S instruction translated");
+      }else if (opcode === 'LW' || opcode === 'LD' || opcode === 'L.S' || opcode === 'L.D') {       
+        // Insert logic for LW
+        // console.log("LW instruction translated");
+      }else if (opcode === 'SW' || opcode === 'SD' || opcode === 'S.S' || opcode === 'S.D') {      
+        // Insert logic for SW
+        // console.log("SW instruction translated");
+      }else if (opcode === 'BNE' || opcode === 'BEQ') {
+        // Insert logic for BNE
+        // console.log("BNE instruction translated");
+      }
+
+
+  }
+  };
+  algorithim();
+
 
   const handleLatencyInput = () => {
     const updatedInstructions = instructions.map((inst) => {
@@ -266,8 +404,8 @@ const Tomasulo = () => {
     }
   };
 
-  const executeInstructions = () => {
-    // Implement execution logic here
+  const executeInstructions = (flag) => {
+    
   };
 
   const writebackResults = () => {
@@ -287,6 +425,11 @@ const Tomasulo = () => {
     const vk = parts[2]; // Assuming the third part is vk
     return { opcode, vj, vk };
   };
+
+
+
+
+
 
   return (
     <div>

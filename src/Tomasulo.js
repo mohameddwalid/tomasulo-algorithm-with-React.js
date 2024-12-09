@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const Tomasulo = () => {
   let clock=0;
-  let flag = true;
+  let counter =0;
 
   // Individual number of rows for each station
   const [addSubFloatRows, setAddSubFloatRows] = useState(3);
@@ -42,6 +42,10 @@ const Tomasulo = () => {
     'MUL.D', 'MUL.S', 'DIV.D', 'DIV.S', 'LW', 'LD', 'L.S',
     'L.D', 'SW', 'SD', 'S.S', 'S.D', 'BNE', 'BEQ',
   ];
+  const [wb, setwb] = useState([]);
+
+
+  const [insertedOpCodes, setInsertedOpCodes] = useState([]);
 
   useEffect(() => {
     initializeTables();
@@ -51,6 +55,10 @@ const Tomasulo = () => {
     let parts = instruction.trim().split(/\s+/);    
     let opcode = parts[0];
     let args = parts.slice(1); // For any arguments following the opcode
+
+    // hena alu & temla el wb state el foo2 w loop 3ala kol el reservations states w nshoof law feh haga me7taga el wb variable n7otaha f nafs el cycle
+    // w ba3d keda t-writeback fel cycle el ba3deha fel register file
+
 
     if (opcode === 'DADDI') {
 
@@ -152,10 +160,12 @@ const Tomasulo = () => {
       qj: '',
       qk: '',
       A: '',
+      latency: -1,
     }));
-    console.log(emptyAddSubFloat);
+    console.log("emptyAddSubFloat",emptyAddSubFloat);
 
-    const emptyMulDivFloat = Array.from({ length: parseInt(mulDivFloatRows) }, () => ({
+    const emptyMulDivFloat = Array.from({ length: parseInt(mulDivFloatRows) }, (_, index) => ({
+      name: `M${index}`,
       busy: false,
       opcode: '',
       vj: '',
@@ -165,7 +175,8 @@ const Tomasulo = () => {
       A: '',
     }));
 
-    const emptyIntAddSub = Array.from({ length: parseInt(intAddSubRows) }, () => ({
+    const emptyIntAddSub = Array.from({ length: parseInt(intAddSubRows) }, (_, index) => ({
+      name: `IA${index}`,
       busy: false,
       opcode: '',
       vj: '',
@@ -175,12 +186,14 @@ const Tomasulo = () => {
       A: '',
     }));
 
-    const emptyLoad = Array.from({ length: parseInt(loadRows) }, () => ({
+    const emptyLoad = Array.from({ length: parseInt(loadRows) }, (_, index) => ({
+      name: `L${index}`,
       busy: false,
       qi: '',
     }));
 
-    const emptyStore = Array.from({ length: parseInt(storeRows) }, () => ({
+    const emptyStore = Array.from({ length: parseInt(storeRows) }, (_, index) => ({
+      name: `S${index}`,
       busy: false,
       qi: '',
       address: '',
@@ -195,25 +208,27 @@ const Tomasulo = () => {
 
   const handleTextInput = () => {
     const lines = inputInstructions.split('\n');
-    
-    const parsedInstructions = lines.map((line) => {
-      // console.log("line",line);      
+    console.log("lines",lines);
+  // Parse the input instructions
+  const parsedInstructions = lines
+    .map((line) => {
       const parts = line.trim().split(' ');
-      // console.log("parts",parts);
+      console.log("parts",parts);
+      const opcode = parts[0];
+      setInsertedOpCodes((prevOpCodes) => [...prevOpCodes, opcode]);
       
+
+      // Ensure the line has valid instruction format
       if (parts.length >= 3 && parts.length <= 4) {
-        return { instruction: line.trim(), value: '' };
+        return { instruction: line.trim(), value: '', issued: false }; // Initialize value as an empty string
       }
 
-      
-      
-      return null;
-    }).filter(Boolean);
+      return null; // Ignore invalid lines
+    })
+    .filter(Boolean);
 
-// console.log(parsedInstructions);
-
-  
-    setInstructions((prevInstructions) => [parsedInstructions]);
+  // Set parsed instructions to state
+  setInstructions(parsedInstructions);
   
     const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
     const uniqueRegisters = [...new Set(allRegisters)];
@@ -231,6 +246,40 @@ const Tomasulo = () => {
     });
   };
 // console.log("ins",instructions);
+
+const handleLatencyInput = () => {
+  // Dynamically populate latency values based on opcode
+  console.log(instructions);
+  const updatedInstructions = instructions.map((inst) => {
+    console.log("inst",inst);
+    const opcode = inst.instruction.split(' ')[0]; // Extract opcode
+    const latency = latencies[opcode] || ''; // Get latency for the opcode, or default to ''
+    return { ...inst, value: latency }; // Assign latency to value field
+  });
+  
+  // Update state with instructions containing latency values
+  setInstructions(updatedInstructions);
+  console.log("updatedInstructions",updatedInstructions);
+};
+
+const handleLatencyChange = (opcode, latency) => {
+  // Update the latencies mapping
+  setLatencies((prevLatencies) => ({
+    ...prevLatencies,
+    [opcode]: latency,
+  }));
+
+  // Recalculate latencies for instructions
+  setInstructions((prevInstructions) =>
+    prevInstructions.map((inst) => {
+      const instOpcode = inst.instruction.split(' ')[0];
+      if (instOpcode === opcode) {
+        return { ...inst, value: latency };
+      }
+      return inst;
+    })
+  );
+};
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
@@ -273,46 +322,95 @@ const Tomasulo = () => {
       reader.readAsText(file);
     }
   };
-  function algorithim() {
-    // console.log("Instructions",instructions);
 
-    for(let i=0;i<instructions.length;i++){
-      let inst = instructions[i][0].instruction;
-      // console.log("inst:  ",inst);
-      let parts = inst.trim().split(/\s+/);    
-      let opcode = parts[0];
-      // console.log("Opcode",opcode);
+  const executeInstructions = () => {
+    console.log("We are in cycle: ",cycle);
+    for(let i=0; i<addSubFloat.length;i++){
+      if(addSubFloat[i].busy){
+        console.log(addSubFloat[i].qj);
+        if(addSubFloat[i].qj === '' && addSubFloat[i].qk === ''){
+          console.log("da5al");
 
-      if (opcode === 'DADDI'  || opcode === 'ADD.S' ||opcode === 'ADD.D' || opcode === 'SUB.S' || opcode === 'SUB.D'||opcode === 'DSUBI' ) {
-        // Insert logic for DADDI
-              for (let i = 0; i < addSubFloat.length; i++) {
-                if (!addSubFloat[i].busy) {
-                  for (let i = 0; i < registerFile.length; i++) {        
-                    if (registerFile[i].regname === parts[1] ) {
-                      if( registerFile[i].qi !== 0){
-                        addSubFloat[i].busy = true;
-                        addSubFloat[i].vj = registerFile[i].value;
-                      }
-                      else{
-                        flag = false;
-                      }
-                    } 
-                    if (registerFile[i].regname === parts[2]) {
-                      if(registerFile[i].qi !== 0){
-                        addSubFloat[i].busy = true;
-                        addSubFloat[i].vk = registerFile[i].value;
-                      }
-                      else{
-                        flag = false;
-                      }
-                    }
-                  }  
-                  break;
-                }
+
+          addSubFloat[i].latency = addSubFloat[i].latency - 1;
+          console.log("addSubFloat[i].latency",addSubFloat[i].latency);
+          if(addSubFloat[i].latency == 0){
+
+            // AssemblyTranslate();
+
+            console.log("Fadyaa");
+            addSubFloat[i].busy = false;
+            addSubFloat[i].opcode = '';
+            addSubFloat[i].vj = '';
+            addSubFloat[i].vk = '';
+            addSubFloat[i].qj = '';
+            addSubFloat[i].qk = '';
+            addSubFloat[i].A = '';
+          }
+        }
+      }
+    }
+
+  };
+
+  function issue() {
+    console.log("Issued in Cycle: ", cycle);
+    
+  for (let k = 0; k < instructions.length; k++) {
+    if(instructions[k].issued) continue;
+    let inst = instructions[k].instruction;
+    console.log("Processing instruction:", inst);
+    instructions[k].issued = true;
+
+    let parts = inst.trim().split(/\s+/);    
+    let opcode = parts[0];
+
+    if (['DADDI', 'ADD.S', 'ADD.D', 'SUB.S', 'SUB.D', 'DSUBI'].includes(opcode)) {
+      console.log("Opcode identified:", opcode);
+
+      for (let i = 0; i < addSubFloat.length; i++) {
+        console.log("Checking functional unit:", addSubFloat[i]);
+
+        if (!addSubFloat[i].busy) {
+          console.log("Available functional unit found at index:", i);
+
+          for (let j = 0; j < registerFile.length; j++) {        
+            if (registerFile[j].regname === parts[2]) {
+              if (registerFile[j].qi === 0) {
+                addSubFloat[i].vj = registerFile[j].value;
+                addSubFloat[i].qj = '';
+              } else {
+                addSubFloat[i].vj = '';
+                addSubFloat[i].qj = registerFile[j].qi;
               }
-              // console.log("DADDI instruction translated");
-              // setAddSubFloat((prevAddSubFloat) => [...prevAddSubFloat, { busy: true, opcode: '', vj: '', vk: '', qj: '', qk: '', A: '' }]);
-   
+            }
+            if (registerFile[j].regname === parts[3]) {
+              if (registerFile[j].qi === 0) {
+                addSubFloat[i].vk = registerFile[j].value;
+                addSubFloat[i].qk = '';
+              } else {
+                addSubFloat[i].vk = '';
+                addSubFloat[i].qk = registerFile[j].qi;
+              }
+            }
+          }
+
+          // Mark the functional unit as busy and set opcode/latency
+          addSubFloat[i].busy = true;
+          addSubFloat[i].opcode = opcode;
+          addSubFloat[i].latency = instructions[k].value;
+
+          // Update destination register's Qi
+          for (let j = 0; j < registerFile.length; j++) {        
+            if (registerFile[j].regname === parts[1]) {
+              registerFile[j].qi = addSubFloat[i].name;
+            }
+          }
+
+          console.log("Updated addSubFloat:", addSubFloat);
+          break; // Exit after assigning to a functional unit
+        }
+      }
     } else if (opcode === 'MUL.S' || opcode === 'MUL.D' || opcode === 'DIV.S' || opcode === 'DIV.D') {
         // Insert logic for MUL.S
         // console.log("MUL.S instruction translated");
@@ -326,24 +424,7 @@ const Tomasulo = () => {
         // Insert logic for BNE
         // console.log("BNE instruction translated");
       }
-
-
-  }
-  };
-  algorithim();
-
-
-  const handleLatencyInput = () => {
-    const updatedInstructions = instructions.map((inst) => {
-      const opcode = inst.instruction.split(' ')[0];
-      const latency = latencies[opcode] || '';
-      return { ...inst, value: latency };
-    });
-    setInstructions(updatedInstructions);
-  };
-
-  const handleLatencyChange = (opcode, latency) => {
-    setLatencies({ ...latencies, [opcode]: latency });
+    }
   };
 
   const renderRows = (station, type) => {
@@ -368,18 +449,30 @@ const Tomasulo = () => {
   const startSimulation = () => {
     setIsRunning(true);
     setCycle(0);
+    setCycle((cycle) => cycle + 1);
+
   };
 
-  const nextCycle = () => {
+  const nextCycle = async () => {
     if (isRunning) {
-      setCycle((prevCycle) => prevCycle + 1);
+      setCycle((cycle) => cycle + 1);
+      console.log("cycle");
+      if(cycle === 1){
+        issue();
+      }
+      else{
+        issue();
+        // writebackResults();
+        executeInstructions();
+      }
+
     }
   };
 
   const simulateCycle = () => {
-    issueInstructions();
-    executeInstructions();
-    writebackResults();
+    // issueInstructions();
+    // executeInstructions();
+    // writebackResults();
   };
 
   const issueInstructions = () => {
@@ -404,12 +497,9 @@ const Tomasulo = () => {
     }
   };
 
-  const executeInstructions = (flag) => {
-    
-  };
-
   const writebackResults = () => {
-    // Implement writeback logic here
+
+   
   };
 
   useEffect(() => {
@@ -578,7 +668,7 @@ const Tomasulo = () => {
 
       <div>
         <h2>Set Latencies</h2>
-        {opcodes.map((opcode) => (
+        {insertedOpCodes.map((opcode) => (
           <div key={opcode}>
             <label>{opcode}: </label>
             <input
@@ -586,7 +676,7 @@ const Tomasulo = () => {
               value={latencies[opcode] || ''}
               onChange={(e) => handleLatencyChange(opcode, e.target.value)}
             />
-          </div>
+          </div> 
         ))}
         <button onClick={handleLatencyInput}>Apply Latencies</button>
       </div>
@@ -634,7 +724,7 @@ const Tomasulo = () => {
       </div>
 
       <div>
-        <h2>Current Cycle: {cycle}</h2>
+        <h2>Current Cycle: {cycle - 1}</h2>
         <button onClick={startSimulation}>Start Simulation</button>
         <button onClick={nextCycle}>Next Cycle</button>
       </div>

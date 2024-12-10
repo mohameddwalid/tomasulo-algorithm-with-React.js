@@ -138,19 +138,8 @@ const Tomasulo = () => {
 
 
     }));
-
-    
-    
-
-    
-
-
     console.log(cache);
     console.log(block);
-
-
-
-
     const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, (_, index) => ({
       name: `A${index}`,
       busy: false,
@@ -394,7 +383,6 @@ const handleLatencyChange = (opcode, latency) => {
               }
             }
           }
-
           // Mark the functional unit as busy and set opcode/latency
           addSubFloat[i].busy = true;
           addSubFloat[i].opcode = opcode;
@@ -411,18 +399,50 @@ const handleLatencyChange = (opcode, latency) => {
           break; // Exit after assigning to a functional unit
         }
       }
-    } else if (opcode === 'MUL.S' || opcode === 'MUL.D' || opcode === 'DIV.S' || opcode === 'DIV.D') {
-        // Insert logic for MUL.S
-        // console.log("MUL.S instruction translated");
-      }else if (opcode === 'LW' || opcode === 'LD' || opcode === 'L.S' || opcode === 'L.D') {       
-        // Insert logic for LW
-        // console.log("LW instruction translated");
-      }else if (opcode === 'SW' || opcode === 'SD' || opcode === 'S.S' || opcode === 'S.D') {      
-        // Insert logic for SW
-        // console.log("SW instruction translated");
-      }else if (opcode === 'BNE' || opcode === 'BEQ') {
-        // Insert logic for BNE
-        // console.log("BNE instruction translated");
+    } else if (['MUL.S',  'MUL.D', 'DIV.S', 'DIV.D'].includes(opcode)) {
+      console.log("Opcode identified:", opcode);
+      for (let i = 0; i < mulDivFloat.length; i++) {
+        if (!mulDivFloat[i].busy){
+          for (let j = 0; j < registerFile.length; j++) {        
+            if (registerFile[j].regname === parts[2]) {
+              if (registerFile[j].qi === 0) {
+                mulDivFloat[i].vj = registerFile[j].value;
+                mulDivFloat[i].qj = '';
+              } else {
+                mulDivFloat[i].vj = '';
+                mulDivFloat[i].qj = registerFile[j].qi;
+              }
+            }
+            if (registerFile[j].regname === parts[3]) {
+              if (registerFile[j].qi === 0) {
+                mulDivFloat[i].vk = registerFile[j].value;
+                mulDivFloat[i].qk = '';
+              } else {
+                mulDivFloat[i].vk = '';
+                mulDivFloat[i].qk = registerFile[j].qi;
+              }
+            }
+
+          }
+          mulDivFloat[i].busy = true;
+          mulDivFloat[i].opcode = opcode;
+          mulDivFloat[i].latency = instructions[k].value;
+        }
+      }
+      } else if (['LW', 'L.D',  'L.S', 'LD', 'LW'].includes(opcode)) {      
+        for (let i = 0; i < load.length; i++) {
+          if (!load[i].busy){
+
+          }
+        } 
+      } else if ( [ 'SW', 'SD', 'S.D', 'S.S'].includes(opcode)) {    
+        for (let i = 0; i < store.length; i++) {
+          if (!store[i].busy){
+
+          }
+        }  
+      } else if (['BNE', 'BEQ'].includes(opcode)) {
+   
       }
     }
   };

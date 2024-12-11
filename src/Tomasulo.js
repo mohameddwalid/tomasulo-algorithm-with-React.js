@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
 const Tomasulo = () => {
-  let clock=0;
-  let counter =0;
 
   // Individual number of rows for each station
   const [addSubFloatRows, setAddSubFloatRows] = useState(3);
@@ -35,6 +33,7 @@ const Tomasulo = () => {
   
   // Simulation state
   const [cycle, setCycle] = useState(0);
+  const [counter, setCounter] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
 
   const opcodes = [
@@ -42,7 +41,13 @@ const Tomasulo = () => {
     'MUL.D', 'MUL.S', 'DIV.D', 'DIV.S', 'LW', 'LD', 'L.S',
     'L.D', 'SW', 'SD', 'S.S', 'S.D', 'BNE', 'BEQ',
   ];
-  const [wb, setwb] = useState([]);
+
+  const [wb, setwb] = useState([{
+    regName: '',
+    value: '',
+    registerationState: '',
+    index: 0
+  }]);
 
 
   const [insertedOpCodes, setInsertedOpCodes] = useState([]);
@@ -51,81 +56,6 @@ const Tomasulo = () => {
     initializeTables();
   }, [addSubFloatRows, mulDivFloatRows, intAddSubRows, loadRows, storeRows,cacheSize,blockSize]);
 
-  function AssemblyTranslate(instruction) {
-    let parts = instruction.trim().split(/\s+/);    
-    let opcode = parts[0];
-    let args = parts.slice(1); // For any arguments following the opcode
-
-    // hena alu & temla el wb state el foo2 w loop 3ala kol el reservations states w nshoof law feh haga me7taga el wb variable n7otaha f nafs el cycle
-    // w ba3d keda t-writeback fel cycle el ba3deha fel register file
-
-
-    if (opcode === 'DADDI') {
-
-        // Insert logic for DADDI
-        return "DADDI instruction translated";
-    } else if (opcode === 'DSUBI') {
-        // Insert logic for DSUBI
-        return "DSUBI instruction translated";
-    } else if (opcode === 'ADD.D') {
-        // Insert logic for ADD.D
-        return "ADD.D instruction translated";
-    } else if (opcode === 'ADD.S') {
-        // Insert logic for ADD.S
-        return "ADD.S instruction translated";
-    } else if (opcode === 'SUB.D') {
-        // Insert logic for SUB.D
-        return "SUB.D instruction translated";
-    } else if (opcode === 'SUB.S') {
-        // Insert logic for SUB.S
-        return "SUB.S instruction translated";
-    } else if (opcode === 'MUL.D') {
-        // Insert logic for MUL.D
-        return "MUL.D instruction translated";
-    } else if (opcode === 'MUL.S') {
-        // Insert logic for MUL.S
-        return "MUL.S instruction translated";
-    } else if (opcode === 'DIV.D') {
-        // Insert logic for DIV.D
-        return "DIV.D instruction translated";
-    } else if (opcode === 'DIV.S') {
-        // Insert logic for DIV.S
-        return "DIV.S instruction translated";
-    } else if (opcode === 'LW') {
-        // Insert logic for LW
-        return "LW instruction translated";
-    } else if (opcode === 'LD') {
-        // Insert logic for LD
-        return "LD instruction translated";
-    } else if (opcode === 'L.S') {
-        // Insert logic for L.S
-        return "L.S instruction translated";
-    } else if (opcode === 'L.D') {
-        // Insert logic for L.D
-        return "L.D instruction translated";
-    } else if (opcode === 'SW') {
-        // Insert logic for SW
-        return "SW instruction translated";
-    } else if (opcode === 'SD') {
-        // Insert logic for SD
-        return "SD instruction translated";
-    } else if (opcode === 'S.S') {
-        // Insert logic for S.S
-        return "S.S instruction translated";
-    } else if (opcode === 'S.D') {
-        // Insert logic for S.D
-        return "S.D instruction translated";
-    } else if (opcode === 'BNE') {
-        // Insert logic for BNE
-        return "BNE instruction translated";
-    } else if (opcode === 'BEQ') {
-        // Insert logic for BEQ
-        return "BEQ instruction translated";
-    } else {
-        // If opcode is not recognized
-        return null;
-    }
-}
 
   const initializeTables = () => {
     const block = Array.from({ length: parseInt(blockSize) }, () => ({
@@ -150,6 +80,7 @@ const Tomasulo = () => {
       qk: '',
       A: '',
       latency: -1,
+      instruction: 0,
     }));
     console.log("emptyAddSubFloat",emptyAddSubFloat);
 
@@ -162,6 +93,8 @@ const Tomasulo = () => {
       qj: '',
       qk: '',
       A: '',
+      latency: -1,
+      instruction: 0,
     }));
 
     const emptyIntAddSub = Array.from({ length: parseInt(intAddSubRows) }, (_, index) => ({
@@ -312,6 +245,192 @@ const handleLatencyChange = (opcode, latency) => {
     }
   };
 
+  const writebackResults = (wb) => {
+    for(let i=0; i<registerFile.length; i++){
+      if(registerFile[i].regname === wb.regName){
+        registerFile[i].value = wb.value;
+        if(wb.registerationState === "Load"){
+          load[wb.index].busy = false;
+          load[wb.index].qi = '';
+        }
+        else if(wb.registerationState === "Store"){
+          store[wb.index].busy = false;
+          store[wb.index].address = '';
+        }
+        else if(wb.registerationState === "AddSubFloat"){
+          addSubFloat[wb.index].busy = false;
+          addSubFloat[wb.index].opcode = '';
+          addSubFloat[wb.index].vj = '';
+          addSubFloat[wb.index].vk = '';
+          addSubFloat[wb.index].qj = '';
+          addSubFloat[wb.index].qk = '';
+          addSubFloat[wb.index].A = '';
+          addSubFloat[wb.index].instruction = 0;
+          addSubFloat[wb.index].latency = -1;
+        }
+        else if(wb.registerationState === "MulDivFloat"){
+          mulDivFloat[wb.index].busy = false;
+          mulDivFloat[wb.index].opcode = '';
+          mulDivFloat[wb.index].vj = '';
+          mulDivFloat[wb.index].vk = '';
+          mulDivFloat[wb.index].qj = '';
+          mulDivFloat[wb.index].qk = '';
+          mulDivFloat[wb.index].A = '';
+          mulDivFloat[wb.index].instruction = 0;
+          mulDivFloat[wb.index].latency = -1;
+        }
+        else {
+          intAddSub[wb.index].busy = false;
+          intAddSub[wb.index].opcode = '';
+          intAddSub[wb.index].vj = '';
+          intAddSub[wb.index].vk = '';
+          intAddSub[wb.index].qj = '';
+          intAddSub[wb.index].qk = '';
+          intAddSub[wb.index].A = '';
+          intAddSub[wb.index].instruction = 0;
+          intAddSub[wb.index].latency = -1;
+        }
+      }
+    }
+  };
+
+  const checkWriteBack = () => {
+    let arrayCounter = new Array(wb.length);
+    if(wb.length > 1){
+      for(let j = 0; j < wb.length; j++){
+        const regName = wb[j].regName;
+        let counter = 0;
+        for(let i = 0; i < addSubFloat.length; i++){
+          if((addSubFloat[i].qj === regName) || (addSubFloat[i].qk === regName)){
+            counter++;
+          }
+        }
+        for(let i = 0; i < mulDivFloat.length; i++){
+          if((mulDivFloat[i].qj === regName) || (mulDivFloat[i].qk === regName)){
+            counter++;
+          }
+        }
+        for(let i = 0; i < intAddSub.length; i++){
+          if((intAddSub[i].qj === regName) || (intAddSub[i].qk === regName)){
+            counter++;
+          }
+        }
+        for(let i = 0; i < load.length; i++){
+          if(load[i].qi === regName){
+            counter++;
+          }
+        }
+        for(let i = 0; i < store.length; i++){
+          if(store[i].qi === regName){
+            counter++;
+          }
+        }
+        arrayCounter[j] = counter;
+      }
+
+      let max = arrayCounter[0];
+      let index = 0;
+      for(let i = 0; i < arrayCounter.length; i++){
+        if(arrayCounter[i] > max){
+          max = arrayCounter[i];
+          index = i;
+        }
+      }
+      arrayCounter.slice(index, 1);
+      writebackResults(wb[index]);
+    }
+    else{
+      writebackResults(wb[0]);
+    }
+  };
+  
+  function ALU(registerationState, index, instructionIndex) {
+    let parts = instructions[instructionIndex].trim().split(/\s+/);    
+    let opcode = parts[0];
+
+    // hena alu & temla el wb state el foo2 w loop 3ala kol el reservations states 
+    // w nshoof law feh haga me7taga el wb variable n7otaha f nafs el cycle
+    // w ba3d keda t-writeback fel cycle el ba3deha fel register file
+
+    // tet3emel ka object "key": RegName, "value": RegValue
+    const regName = parts[1];
+    let value = 0;
+    
+    if (opcode === 'DADDI') {
+      // Insert logic for DADDI
+      // return "DADDI instruction translated";
+    } else if (opcode === 'DSUBI') {
+      // Insert logic for DSUBI
+      return "DSUBI instruction translated";
+    } else if (opcode === 'ADD.D') {
+      // Insert logic for ADD.D
+      return "ADD.D instruction translated";
+    } else if (opcode === 'ADD.S') {
+        // Insert logic for ADD.S
+        return "ADD.S instruction translated";
+    } else if (opcode === 'SUB.D') {
+        // Insert logic for SUB.D
+        return "SUB.D instruction translated";
+    } else if (opcode === 'SUB.S') {
+        // Insert logic for SUB.S
+        return "SUB.S instruction translated";
+    } else if (opcode === 'MUL.D') {
+        // Insert logic for MUL.D
+        return "MUL.D instruction translated";
+    } else if (opcode === 'MUL.S') {
+        // Insert logic for MUL.S
+        return "MUL.S instruction translated";
+    } else if (opcode === 'DIV.D') {
+        // Insert logic for DIV.D
+        return "DIV.D instruction translated";
+    } else if (opcode === 'DIV.S') {
+        // Insert logic for DIV.S
+        return "DIV.S instruction translated";
+    } else if (opcode === 'LW') {
+        // Insert logic for LW
+        return "LW instruction translated";
+    } else if (opcode === 'LD') {
+        // Insert logic for LD
+        return "LD instruction translated";
+    } else if (opcode === 'L.S') {
+        // Insert logic for L.S
+        return "L.S instruction translated";
+    } else if (opcode === 'L.D') {
+        // Insert logic for L.D
+        return "L.D instruction translated";
+    } else if (opcode === 'SW') {
+        // Insert logic for SW
+        return "SW instruction translated";
+    } else if (opcode === 'SD') {
+        // Insert logic for SD
+        return "SD instruction translated";
+    } else if (opcode === 'S.S') {
+        // Insert logic for S.S
+        return "S.S instruction translated";
+    } else if (opcode === 'S.D') {
+        // Insert logic for S.D
+        return "S.D instruction translated";
+    } else if (opcode === 'BNE') {
+        // Insert logic for BNE
+        return "BNE instruction translated";
+    } else if (opcode === 'BEQ') {
+        // Insert logic for BEQ
+        return "BEQ instruction translated";
+    } else {
+        // If opcode is not recognized
+        return null;
+    }
+
+    const wbValue = {
+      regName,
+      value,
+      registerationState,
+      index
+    }
+    setwb([...wb, wbValue]);
+
+}
+
   const executeInstructions = () => {
     console.log("We are in cycle: ",cycle);
     for(let i=0; i<addSubFloat.length;i++){
@@ -320,21 +439,24 @@ const handleLatencyChange = (opcode, latency) => {
         if(addSubFloat[i].qj === '' && addSubFloat[i].qk === ''){
           console.log("da5al");
 
-
           addSubFloat[i].latency = addSubFloat[i].latency - 1;
           console.log("addSubFloat[i].latency",addSubFloat[i].latency);
           if(addSubFloat[i].latency == 0){
-
-            // AssemblyTranslate();
-
             console.log("Fadyaa");
-            addSubFloat[i].busy = false;
-            addSubFloat[i].opcode = '';
-            addSubFloat[i].vj = '';
-            addSubFloat[i].vk = '';
-            addSubFloat[i].qj = '';
-            addSubFloat[i].qk = '';
-            addSubFloat[i].A = '';
+            ALU("addSubFloat", i , addSubFloat[i].instruction);
+          }
+        }
+      }
+      if(mulDivFloat[i].busy){
+        console.log(mulDivFloat[i].qj);
+        if(mulDivFloat[i].qj === '' && mulDivFloat[i].qk === ''){
+          console.log("da5al");
+
+          mulDivFloat[i].latency = mulDivFloat[i].latency - 1;
+          console.log("mulDivFloat[i].latency",mulDivFloat[i].latency);
+          if(mulDivFloat[i].latency == 0){
+            console.log("Fadyaa");
+            ALU(mulDivFloat[i].instruction);
           }
         }
       }
@@ -344,12 +466,15 @@ const handleLatencyChange = (opcode, latency) => {
 
   function issue() {
     console.log("Issued in Cycle: ", cycle);
-    
-  for (let k = 0; k < instructions.length; k++) {
-    if(instructions[k].issued) continue;
-    let inst = instructions[k].instruction;
+    console.log("Counter: ", counter);
+    if(counter >= instructions.length){
+      return;
+    }
+    if(instructions[counter].issued){
+      return;
+    }
+    let inst = instructions[counter].instruction;
     console.log("Processing instruction:", inst);
-    instructions[k].issued = true;
 
     let parts = inst.trim().split(/\s+/);    
     let opcode = parts[0];
@@ -361,8 +486,9 @@ const handleLatencyChange = (opcode, latency) => {
         console.log("Checking functional unit:", addSubFloat[i]);
 
         if (!addSubFloat[i].busy) {
+          instructions[counter].issued = true;
+          addSubFloat[i].instruction = counter;
           console.log("Available functional unit found at index:", i);
-
           for (let j = 0; j < registerFile.length; j++) {        
             if (registerFile[j].regname === parts[2]) {
               if (registerFile[j].qi === 0) {
@@ -386,23 +512,29 @@ const handleLatencyChange = (opcode, latency) => {
           // Mark the functional unit as busy and set opcode/latency
           addSubFloat[i].busy = true;
           addSubFloat[i].opcode = opcode;
-          addSubFloat[i].latency = instructions[k].value;
+          addSubFloat[i].latency = instructions[counter].value;
 
           // Update destination register's Qi
-          for (let j = 0; j < registerFile.length; j++) {        
+          for (let j = 0; j < registerFile.length; j++) {  
+
             if (registerFile[j].regname === parts[1]) {
               registerFile[j].qi = addSubFloat[i].name;
             }
           }
 
           console.log("Updated addSubFloat:", addSubFloat);
+          setCounter(counter + 1);
           break; // Exit after assigning to a functional unit
         }
       }
     } else if (['MUL.S',  'MUL.D', 'DIV.S', 'DIV.D'].includes(opcode)) {
       console.log("Opcode identified:", opcode);
       for (let i = 0; i < mulDivFloat.length; i++) {
+        console.log("Checking functional unit:", mulDivFloat[i]);
+
         if (!mulDivFloat[i].busy){
+          instructions[counter].issued = true;
+          mulDivFloat[i].instruction = counter;
           for (let j = 0; j < registerFile.length; j++) {        
             if (registerFile[j].regname === parts[2]) {
               if (registerFile[j].qi === 0) {
@@ -426,7 +558,19 @@ const handleLatencyChange = (opcode, latency) => {
           }
           mulDivFloat[i].busy = true;
           mulDivFloat[i].opcode = opcode;
-          mulDivFloat[i].latency = instructions[k].value;
+          mulDivFloat[i].latency = instructions[counter].value;
+
+          // Update destination register's Qi
+          for (let j = 0; j < registerFile.length; j++) {  
+
+            if (registerFile[j].regname === parts[1]) {
+              registerFile[j].qi = mulDivFloat[i].name;
+            }
+          }
+
+          console.log("Updated mulDivFloat:", mulDivFloat);
+          setCounter(counter + 1);
+          break;
         }
       }
       } else if (['LW', 'L.D',  'L.S', 'LD', 'LW'].includes(opcode)) {      
@@ -444,6 +588,22 @@ const handleLatencyChange = (opcode, latency) => {
       } else if (['BNE', 'BEQ'].includes(opcode)) {
    
       }
+
+  };
+
+  const nextCycle = async () => {
+    if (isRunning) {
+      setCycle((cycle) => cycle + 1);
+      console.log("cycle");
+      if(cycle === 1){
+        issue();
+      }
+      else{
+        issue();
+        checkWriteBack();
+        executeInstructions();
+      }
+
     }
   };
 
@@ -471,22 +631,6 @@ const handleLatencyChange = (opcode, latency) => {
     setCycle(0);
     setCycle((cycle) => cycle + 1);
 
-  };
-
-  const nextCycle = async () => {
-    if (isRunning) {
-      setCycle((cycle) => cycle + 1);
-      console.log("cycle");
-      if(cycle === 1){
-        issue();
-      }
-      else{
-        issue();
-        // writebackResults();
-        executeInstructions();
-      }
-
-    }
   };
 
   const simulateCycle = () => {
@@ -517,10 +661,6 @@ const handleLatencyChange = (opcode, latency) => {
     }
   };
 
-  const writebackResults = () => {
-
-   
-  };
 
   useEffect(() => {
     if (isRunning) {

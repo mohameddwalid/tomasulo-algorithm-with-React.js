@@ -577,6 +577,7 @@ const Tomasulo = () => {
           });
         }
       }
+      value =temp[0].value;
 
       console.log("Temp values (target only):", temp);
       console.log("Updated cache:", cache);
@@ -657,7 +658,7 @@ const Tomasulo = () => {
           });
         }
       }
-
+      value =temp[0].value;
       console.log("Temp values:", temp);
       console.log("Updated cache:", cache);
     } else if (opcode === "SW" || opcode === "S.S" || opcode === "S.D" || opcode === "SD") { 
@@ -666,6 +667,7 @@ const Tomasulo = () => {
           value = registerFile[i].value;
         }
       }
+
 
       console.log("Value to store:", value);
       console.log("Store address:", storeAddress);
@@ -688,7 +690,7 @@ const Tomasulo = () => {
 
     const wbValue = {
       regName, // The target register name (e.g., R1)
-      value: temp[0].value, // The value from temp that was fetched (i.e., the value at targetAddress)
+      value, // The value from temp that was fetched (i.e., the value at targetAddress)
       registerationState, // The registration state (e.g., 'Load')
       index, // The instruction index
     };

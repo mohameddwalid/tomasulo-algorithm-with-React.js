@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const Tomasulo = () => {
-
   // Individual number of rows for each station
   const [addSubFloatRows, setAddSubFloatRows] = useState(3);
   const [mulDivFloatRows, setMulDivFloatRows] = useState(3);
@@ -17,127 +16,160 @@ const Tomasulo = () => {
   const [load, setLoad] = useState([]);
   const [store, setStore] = useState([]);
 
-  
   const [dataBus, setDataBus] = useState([
     {
-      tag: '',
-      value: ''
-    }
+      tag: "",
+      value: "",
+    },
   ]);
   // Instructions state
   const [instructions, setInstructions] = useState([]);
-  const [inputInstructions, setInputInstructions] = useState('');
+  const [inputInstructions, setInputInstructions] = useState("");
   const [parsedInstructions22, setParsedInstructions22] = useState([]);
   const [instructionFile, setInstructionFile] = useState(null);
   const [latencies, setLatencies] = useState({});
   const [registerFile, setRegisterFile] = useState([]);
   // const [cache,setCache]=useState([]);
   // Simulation state
-  let BoolHena=false;
+  let BoolHena = false;
   const [cycle, setCycle] = useState(0);
   const [counter, setCounter] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [insertedOpCodes, setInsertedOpCodes] = useState([]);
-  let values={
-    vj:'',
-    vk:''
-  }
+  let values = {
+    vj: "",
+    vk: "",
+  };
   const opcodes = [
-    'DADDI', 'DSUBI', 'ADD.D', 'ADD.S', 'SUB.D', 'SUB.S',
-    'MUL.D', 'MUL.S', 'DIV.D', 'DIV.S', 'LW', 'LD', 'L.S',
-    'L.D', 'SW', 'SD', 'S.S', 'S.D', 'BNE', 'BEQ',
+    "DADDI",
+    "DSUBI",
+    "ADD.D",
+    "ADD.S",
+    "SUB.D",
+    "SUB.S",
+    "MUL.D",
+    "MUL.S",
+    "DIV.D",
+    "DIV.S",
+    "LW",
+    "LD",
+    "L.S",
+    "L.D",
+    "SW",
+    "SD",
+    "S.S",
+    "S.D",
+    "BNE",
+    "BEQ",
   ];
   // Function to create memory blocks with sequential addressing
 
-const createMemory = (blockSize) => { 
-  let currentAddress = 0;
-  
-  return Array.from({ length: 10 }, (_, blockIndex) => ({
-    blockNumber: blockIndex,
-    block: Array.from({ length: blockSize }, (_, index) => ({
-      index,
-      address: currentAddress++,
-      value: index
-    }))
-  }));
-};
+  const createMemory = (blockSize) => {
+    let currentAddress = 0;
 
-// Example usage:
-const memory = createMemory(blockSize);
-console.log("Memory",memory);
+    return Array.from({ length: 10 }, (_, blockIndex) => ({
+      blockNumber: blockIndex,
+      block: Array.from({ length: blockSize }, (_, index) => ({
+        index,
+        address: currentAddress++,
+        value: index,
+      })),
+    }));
+  };
 
-  const [wb, setwb] = useState([{
-    regName: '',
-    value: '',
-    registerationState: '',
-    index: 0
-  }]);
+  // Example usage:
+  const memory = createMemory(blockSize);
+  console.log("Memory", memory);
+
+  const [wb, setwb] = useState([
+    {
+      regName: "",
+      value: "",
+      registerationState: "",
+      index: 0,
+    },
+  ]);
   // const block = Array.from({ length: parseInt(blockSize) }, (_, index) => ({
   //   address: '',
   //   value: '',
   // }));
   const [cache, setCache] = useState([]);
 
-  
   const initializeTables = () => {
-// console.log('block',block);
-    // console.log('cache',cache);    
-    const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, (_, index) => ({
-      name: `A${index}`,
-      busy: false,
-      opcode: '',
-      vj: '',
-      vk: '',
-      qj: '',
-      qk: '',
-      A: '',
-      latency: -1,
-      instruction: 0,
-    }));
-    const emptyMulDivFloat = Array.from({ length: parseInt(mulDivFloatRows) }, (_, index) => ({
-      name: `M${index}`,
-      busy: false,
-      opcode: '',
-      vj: '',
-      vk: '',
-      qj: '',
-      qk: '',
-      A: '',
-      latency: -1,
-      instruction: 0,
-    }));
-    const emptyIntAddSub = Array.from({ length: parseInt(intAddSubRows) }, (_, index) => ({
-      name: `IA${index}`,
-      busy: false,
-      opcode: '',
-      vj: '',
-      vk: '',
-      qj: '',
-      qk: '',
-      A: '',
-      latency: -1,
-      instruction: 0,
-    }));
-    const emptyLoad = Array.from({ length: parseInt(loadRows) }, (_, index) => ({
-      name: `L${index}`,
-      busy: false,
-      address: '',
-      qi:'',
-      latency: -1,
-      instruction: 0,
-      loop:false,
-      bool:false,
-      counter:0,
-      issueCycle:0
-    }));
-    const emptyStore = Array.from({ length: parseInt(storeRows) }, (_, index) => ({
-      name: `S${index}`,
-      busy: false,
-      qi: '',
-      address: '',
-      latency: -1,
-      instruction: 0,
-    }));
+    // console.log('block',block);
+    // console.log('cache',cache);
+    const emptyAddSubFloat = Array.from(
+      { length: parseInt(addSubFloatRows) },
+      (_, index) => ({
+        name: `A${index}`,
+        busy: false,
+        opcode: "",
+        vj: "",
+        vk: "",
+        qj: "",
+        qk: "",
+        A: "",
+        latency: -1,
+        instruction: 0,
+      })
+    );
+    const emptyMulDivFloat = Array.from(
+      { length: parseInt(mulDivFloatRows) },
+      (_, index) => ({
+        name: `M${index}`,
+        busy: false,
+        opcode: "",
+        vj: "",
+        vk: "",
+        qj: "",
+        qk: "",
+        A: "",
+        latency: -1,
+        instruction: 0,
+      })
+    );
+    const emptyIntAddSub = Array.from(
+      { length: parseInt(intAddSubRows) },
+      (_, index) => ({
+        name: `IA${index}`,
+        busy: false,
+        opcode: "",
+        vj: "",
+        vk: "",
+        qj: "",
+        qk: "",
+        A: "",
+        latency: -1,
+        instruction: 0,
+      })
+    );
+    const emptyLoad = Array.from(
+      { length: parseInt(loadRows) },
+      (_, index) => ({
+        name: `L${index}`,
+        busy: false,
+        address: "",
+        qi: "",
+        latency: -1,
+        instruction: 0,
+        loop: false,
+        bool: false,
+        counter: 0,
+        issueCycle: 0,
+      })
+    );
+    const emptyStore = Array.from(
+      { length: parseInt(storeRows) },
+      (_, index) => ({
+        name: `S${index}`,
+        busy: false,
+        qi: "",
+        address: "",
+        latency: -1,
+        instruction: 0,
+        v:0
+      })
+    );
 
     setAddSubFloat(emptyAddSubFloat);
     setMulDivFloat(emptyMulDivFloat);
@@ -146,7 +178,7 @@ console.log("Memory",memory);
     setStore(emptyStore);
   };
   // console.log('block',block);
-  
+
   useEffect(() => {
     if (isRunning) {
       simulateCycle();
@@ -155,37 +187,52 @@ console.log("Memory",memory);
 
   useEffect(() => {
     initializeTables();
-  }, [addSubFloatRows, mulDivFloatRows, intAddSubRows, loadRows, storeRows,cacheSize,blockSize]);
+  }, [
+    addSubFloatRows,
+    mulDivFloatRows,
+    intAddSubRows,
+    loadRows,
+    storeRows,
+    cacheSize,
+    blockSize,
+  ]);
 
   const handleTextInput = () => {
-    const lines = inputInstructions.split('\n');
-    console.log("lines",lines);
-  // Parse the input instructions
-  const parsedInstructions = lines
-    .map((line) => {
-      const parts = line.trim().split(' ');
-      console.log("parts",parts);
-      const opcode = parts[0];
-      setInsertedOpCodes((prevOpCodes) => [...prevOpCodes, opcode]);
-      
+    const lines = inputInstructions.split("\n");
+    console.log("lines", lines);
+    // Parse the input instructions
+    const parsedInstructions = lines
+      .map((line) => {
+        const parts = line.trim().split(" ");
+        console.log("parts", parts);
+        const opcode = parts[0];
+        setInsertedOpCodes((prevOpCodes) => [...prevOpCodes, opcode]);
 
-      // Ensure the line has valid instruction format
-      if (parts.length >= 3 && parts.length <= 4) {
-        return { instruction: line.trim(), value: '', issued: false,resName:'' }; // Initialize value as an empty string
-      }
+        // Ensure the line has valid instruction format
+        if (parts.length >= 3 && parts.length <= 4) {
+          return {
+            instruction: line.trim(),
+            value: "",
+            issued: false,
+            resName: "",
+          }; // Initialize value as an empty string
+        }
 
-      return null; // Ignore invalid lines
-    })
-    .filter(Boolean);
+        return null; // Ignore invalid lines
+      })
+      .filter(Boolean);
 
-  // Set parsed instructions to state
-  setInstructions(parsedInstructions);
-  
-    const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
+    // Set parsed instructions to state
+    setInstructions(parsedInstructions);
+
+    const allRegisters =
+      lines.flatMap((line) => line.match(/R\d+/g) || line.match(/F\d+/g)) || [];
     const uniqueRegisters = [...new Set(allRegisters)];
-  
+
     setRegisterFile((prevRegisterFile) => {
-      const existingRegisterNames = new Set(prevRegisterFile.map((reg) => reg.regname));
+      const existingRegisterNames = new Set(
+        prevRegisterFile.map((reg) => reg.regname)
+      );
       const newRegisterFile = uniqueRegisters
         .filter((reg) => !existingRegisterNames.has(reg))
         .map((reg) => ({
@@ -196,68 +243,77 @@ console.log("Memory",memory);
       return [...prevRegisterFile, ...newRegisterFile];
     });
   };
-// console.log("ins",instructions);
+  // console.log("ins",instructions);
 
-const handleLatencyInput = () => {
-  // Dynamically populate latency values based on opcode
-  console.log(instructions);
-  const updatedInstructions = instructions.map((inst) => {
-    console.log("inst",inst);
-    const opcode = inst.instruction.split(' ')[0]; // Extract opcode
-    const latency = latencies[opcode] || ''; // Get latency for the opcode, or default to ''
-    return { ...inst, value: latency }; // Assign latency to value field
-  });
-  
-  // Update state with instructions containing latency values
-  setInstructions(updatedInstructions);
-  console.log("updatedInstructions",updatedInstructions);
-};
+  const handleLatencyInput = () => {
+    // Dynamically populate latency values based on opcode
+    console.log(instructions);
+    const updatedInstructions = instructions.map((inst) => {
+      console.log("inst", inst);
+      const opcode = inst.instruction.split(" ")[0]; // Extract opcode
+      const latency = latencies[opcode] || ""; // Get latency for the opcode, or default to ''
+      return { ...inst, value: latency }; // Assign latency to value field
+    });
 
-const handleLatencyChange = (opcode, latency) => {
-  // Update the latencies mapping
-  setLatencies((prevLatencies) => ({
-    ...prevLatencies,
-    [opcode]: latency,
-  }));
+    // Update state with instructions containing latency values
+    setInstructions(updatedInstructions);
+    console.log("updatedInstructions", updatedInstructions);
+  };
 
-  // Recalculate latencies for instructions
-  setInstructions((prevInstructions) =>
-    prevInstructions.map((inst) => {
-      const instOpcode = inst.instruction.split(' ')[0];
-      if (instOpcode === opcode) {
-        return { ...inst, value: latency };
-      }
-      return inst;
-    })
-  );
-};
+  const handleLatencyChange = (opcode, latency) => {
+    // Update the latencies mapping
+    setLatencies((prevLatencies) => ({
+      ...prevLatencies,
+      [opcode]: latency,
+    }));
+
+    // Recalculate latencies for instructions
+    setInstructions((prevInstructions) =>
+      prevInstructions.map((inst) => {
+        const instOpcode = inst.instruction.split(" ")[0];
+        if (instOpcode === opcode) {
+          return { ...inst, value: latency };
+        }
+        return inst;
+      })
+    );
+  };
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
     setInstructionFile(file);
-  
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target.result;
-      const lines = content.split('\n');
-  
-      const parsedInstructions = lines.map((line) => {
-        const cleanLine = line.replace(/\r/g, '');
-        const parts = cleanLine.trim().split(' ');
-        if (parts.length >= 3 && parts.length <= 4) {
-          return { instruction: cleanLine, value: '' };
-        }
-        
-        return null;
-      }).filter(Boolean);
-  
-      setInstructions((prevInstructions) => [...prevInstructions, ...parsedInstructions]);
-  
-      const allRegisters = lines.flatMap((line) => line.match(/R\d+/g) || []);
+      const lines = content.split("\n");
+
+      const parsedInstructions = lines
+        .map((line) => {
+          const cleanLine = line.replace(/\r/g, "");
+          const parts = cleanLine.trim().split(" ");
+          if (parts.length >= 3 && parts.length <= 4) {
+            return { instruction: cleanLine, value: "" };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+
+      setInstructions((prevInstructions) => [
+        ...prevInstructions,
+        ...parsedInstructions,
+      ]);
+
+      const allRegisters =
+        lines.flatMap((line) => line.match(/R\d+/g) || line.match(/F\d+/g)) ||
+        [];
       const uniqueRegisters = [...new Set(allRegisters)];
-  
+
       setRegisterFile((prevRegisterFile) => {
-        const existingRegisterNames = new Set(prevRegisterFile.map((reg) => reg.regname));
+        const existingRegisterNames = new Set(
+          prevRegisterFile.map((reg) => reg.regname)
+        );
         const newRegisterFile = uniqueRegisters
           .filter((reg) => !existingRegisterNames.has(reg))
           .map((reg) => ({
@@ -268,54 +324,50 @@ const handleLatencyChange = (opcode, latency) => {
         return [...prevRegisterFile, ...newRegisterFile];
       });
     };
-  
+
     if (file) {
       reader.readAsText(file);
     }
   };
 
   const writebackResults = (wb) => {
-    for(let i=0; i<registerFile.length; i++){
-      if(registerFile[i].regname === wb.regName){
+    for (let i = 0; i < registerFile.length; i++) {
+      if (registerFile[i].regname === wb.regName) {
         registerFile[i].value = wb.value;
-        if(wb.registerationState === "Load"){
+        if (wb.registerationState === "Load") {
           load[wb.index].busy = false;
-          load[wb.index].qi = '';
-        }
-        else if(wb.registerationState === "Store"){
+          load[wb.index].qi = "";
+        } else if (wb.registerationState === "Store") {
           store[wb.index].busy = false;
-          store[wb.index].address = '';
-        }
-        else if(wb.registerationState === "AddSubFloat"){
+          store[wb.index].address = "";
+        } else if (wb.registerationState === "AddSubFloat") {
           addSubFloat[wb.index].busy = false;
-          addSubFloat[wb.index].opcode = '';
-          addSubFloat[wb.index].vj = '';
-          addSubFloat[wb.index].vk = '';
-          addSubFloat[wb.index].qj = '';
-          addSubFloat[wb.index].qk = '';
-          addSubFloat[wb.index].A = '';
+          addSubFloat[wb.index].opcode = "";
+          addSubFloat[wb.index].vj = "";
+          addSubFloat[wb.index].vk = "";
+          addSubFloat[wb.index].qj = "";
+          addSubFloat[wb.index].qk = "";
+          addSubFloat[wb.index].A = "";
           addSubFloat[wb.index].instruction = 0;
           addSubFloat[wb.index].latency = -1;
-        }
-        else if(wb.registerationState === "MulDivFloat"){
+        } else if (wb.registerationState === "MulDivFloat") {
           mulDivFloat[wb.index].busy = false;
-          mulDivFloat[wb.index].opcode = '';
-          mulDivFloat[wb.index].vj = '';
-          mulDivFloat[wb.index].vk = '';
-          mulDivFloat[wb.index].qj = '';
-          mulDivFloat[wb.index].qk = '';
-          mulDivFloat[wb.index].A = '';
+          mulDivFloat[wb.index].opcode = "";
+          mulDivFloat[wb.index].vj = "";
+          mulDivFloat[wb.index].vk = "";
+          mulDivFloat[wb.index].qj = "";
+          mulDivFloat[wb.index].qk = "";
+          mulDivFloat[wb.index].A = "";
           mulDivFloat[wb.index].instruction = 0;
           mulDivFloat[wb.index].latency = -1;
-        }
-        else {
+        } else {
           intAddSub[wb.index].busy = false;
-          intAddSub[wb.index].opcode = '';
-          intAddSub[wb.index].vj = '';
-          intAddSub[wb.index].vk = '';
-          intAddSub[wb.index].qj = '';
-          intAddSub[wb.index].qk = '';
-          intAddSub[wb.index].A = '';
+          intAddSub[wb.index].opcode = "";
+          intAddSub[wb.index].vj = "";
+          intAddSub[wb.index].vk = "";
+          intAddSub[wb.index].qj = "";
+          intAddSub[wb.index].qk = "";
+          intAddSub[wb.index].A = "";
           intAddSub[wb.index].instruction = 0;
           intAddSub[wb.index].latency = -1;
         }
@@ -325,32 +377,32 @@ const handleLatencyChange = (opcode, latency) => {
 
   const checkWriteBack = () => {
     let arrayCounter = new Array(wb.length);
-    if(wb.length > 1){
-      for(let j = 0; j < wb.length; j++){
+    if (wb.length > 1) {
+      for (let j = 0; j < wb.length; j++) {
         const regName = wb[j].regName;
         let counter = 0;
-        for(let i = 0; i < addSubFloat.length; i++){
-          if((addSubFloat[i].qj === regName) || (addSubFloat[i].qk === regName)){
+        for (let i = 0; i < addSubFloat.length; i++) {
+          if (addSubFloat[i].qj === regName || addSubFloat[i].qk === regName) {
             counter++;
           }
         }
-        for(let i = 0; i < mulDivFloat.length; i++){
-          if((mulDivFloat[i].qj === regName) || (mulDivFloat[i].qk === regName)){
+        for (let i = 0; i < mulDivFloat.length; i++) {
+          if (mulDivFloat[i].qj === regName || mulDivFloat[i].qk === regName) {
             counter++;
           }
         }
-        for(let i = 0; i < intAddSub.length; i++){
-          if((intAddSub[i].qj === regName) || (intAddSub[i].qk === regName)){
+        for (let i = 0; i < intAddSub.length; i++) {
+          if (intAddSub[i].qj === regName || intAddSub[i].qk === regName) {
             counter++;
           }
         }
-        for(let i = 0; i < load.length; i++){
-          if(load[i].qi === regName){
+        for (let i = 0; i < load.length; i++) {
+          if (load[i].qi === regName) {
             counter++;
           }
         }
-        for(let i = 0; i < store.length; i++){
-          if(store[i].qi === regName){
+        for (let i = 0; i < store.length; i++) {
+          if (store[i].qi === regName) {
             counter++;
           }
         }
@@ -359,268 +411,341 @@ const handleLatencyChange = (opcode, latency) => {
 
       let max = arrayCounter[0];
       let index = 0;
-      for(let i = 0; i < arrayCounter.length; i++){
-        if(arrayCounter[i] > max){
+      for (let i = 0; i < arrayCounter.length; i++) {
+        if (arrayCounter[i] > max) {
           max = arrayCounter[i];
           index = i;
         }
       }
       arrayCounter.slice(index, 1);
       writebackResults(wb[index]);
-    }
-    else{
+    } else {
       writebackResults(wb[0]);
     }
   };
-  function getValues (instructionIndex){
-    let letter=instructions[instructionIndex].resName.charAt(0);    
-    let dataNeed={
-      vj:0,
-      vk:0
-    } 
-    if(letter==='A'){
-      let matchingInstruction=addSubFloat.find((inst)=>inst.name===instructions[instructionIndex].resName);
-      dataNeed.vj=matchingInstruction.vj;
-      dataNeed.vk=matchingInstruction.vk;
-   
-    }
-    else if(letter ==='M'){
-      let matchingInstruction=mulDivFloat.find((inst)=>inst.name===instructions[instructionIndex].resName);
-      dataNeed.vj=matchingInstruction.vj;
-      dataNeed.vk=matchingInstruction.vk;
-    }
-    else if (letter ==='F'){
-      let matchingInstruction=intAddSub.find((inst)=>inst.name===instructions[instructionIndex].resName);
-      dataNeed.vj=matchingInstruction.vj;
-      dataNeed.vk=matchingInstruction.vk;
-    }
-    else if (letter ==='S'){
-
-    }
-    else if (letter ==='L'){
-
+  function getValues(instructionIndex) {
+    let letter = instructions[instructionIndex].resName.charAt(0);
+    let dataNeed = {
+      vj: 0,
+      vk: 0,
+    };
+    if (letter === "A") {
+      let matchingInstruction = addSubFloat.find(
+        (inst) => inst.name === instructions[instructionIndex].resName
+      );
+      dataNeed.vj = matchingInstruction.vj;
+      dataNeed.vk = matchingInstruction.vk;
+    } else if (letter === "M") {
+      let matchingInstruction = mulDivFloat.find(
+        (inst) => inst.name === instructions[instructionIndex].resName
+      );
+      dataNeed.vj = matchingInstruction.vj;
+      dataNeed.vk = matchingInstruction.vk;
+    } else if (letter === "F") {
+      let matchingInstruction = intAddSub.find(
+        (inst) => inst.name === instructions[instructionIndex].resName
+      );
+      dataNeed.vj = matchingInstruction.vj;
+      dataNeed.vk = matchingInstruction.vk;
+    } else if (letter === "S") {
+    } else if (letter === "L") {
     }
     return dataNeed;
   }
-  
-  function ALU(registerationState, index, instructionIndex) {
 
-    let values= getValues(instructionIndex);
-    console.log("tempro",values);
-    console.log('instruction',instructions);
-    console.log('instructionIndex',instructionIndex);
-    console.log('trim',instructions[instructionIndex].instruction.trim().split(/\s+/));
-    let parts = instructions[instructionIndex].instruction.trim().split(/\s+/);    
+  function ALU(registerationState, index, instructionIndex) {
+    let values = getValues(instructionIndex);
+    console.log("tempro", values);
+    console.log("instruction", instructions);
+    console.log("instructionIndex", instructionIndex);
+    console.log(
+      "trim",
+      instructions[instructionIndex].instruction.trim().split(/\s+/)
+    );
+    let parts = instructions[instructionIndex].instruction.trim().split(/\s+/);
     let opcode = parts[0];
-    console.log('opcode',parts[0]);
-    console.log('name',parts[1]);
-    console.log("addsub float",addSubFloat);
+    console.log("opcode", parts[0]);
+    console.log("name", parts[1]);
+    console.log("addsub float", addSubFloat);
     const regName = parts[1];
     let value = 0;
-    
-    if (opcode === 'DADDI') {
-      value=parseInt(values.vk, 10)+parseInt(values.vj, 10);
+
+    const targetAddress = parseInt(parts[2], 10);
+    let temp = [
+      {
+        address: targetAddress, // Target address
+        value: 0, // Will be updated with the actual value
+        index: instructionIndex,
+        registerationState: "load",
+      },
+    ];
+
+    if (opcode === "DADDI") {
+      value = parseInt(values.vk, 10) + parseInt(values.vj, 10);
       console.log(value);
-    } else if (opcode === 'DSUBI') {
-      value=parseInt(values.vj,10)-parseInt(values.vk,10);
-    } else if (opcode === 'ADD.D') {
-      value=parseInt(values.vk,10)+parseInt(values.vj,10);
-    } else if (opcode === 'ADD.S') {
-       value=parseInt(values.vk,10)+parseInt(values.vj,10);
-    } else if (opcode === 'SUB.D') {
-         value=parseInt(values.vj,10)-parseInt(values.vk,10);
-    } else if (opcode === 'SUB.S') {
-        value=parseInt(values.vj,10)-parseInt(values.vk,10);
-    } else if (opcode === 'MUL.D') {
-       value=parseInt(values.vj,10)*parseInt(values.vk,10);
-    } else if (opcode === 'MUL.S') {
-       value=parseInt(values.vj,10)*parseInt(values.vk,10);
-    } else if (opcode === 'DIV.D') {
-       value=parseInt(values.vj,10)/parseInt(values.vk,10);
-    } else if (opcode === 'DIV.S') {
-      value=parseInt(values.vj,10)/parseInt(values.vk,10);
-    } 
-    
-      else if (opcode === 'LW') {
-        let temp = [];
-        const targetAddress = parseInt(parts[2], 10);
-    
-        // Check if data is already in the cache
-        const cachedBlock = cache.find((block) =>
+    } else if (opcode === "DSUBI") {
+      value = parseInt(values.vj, 10) - parseInt(values.vk, 10);
+    } else if (opcode === "ADD.D") {
+      value = parseInt(values.vk, 10) + parseInt(values.vj, 10);
+    } else if (opcode === "ADD.S") {
+      value = parseInt(values.vk, 10) + parseInt(values.vj, 10);
+    } else if (opcode === "SUB.D") {
+      value = parseInt(values.vj, 10) - parseInt(values.vk, 10);
+    } else if (opcode === "SUB.S") {
+      value = parseInt(values.vj, 10) - parseInt(values.vk, 10);
+    } else if (opcode === "MUL.D") {
+      value = parseInt(values.vj, 10) * parseInt(values.vk, 10);
+    } else if (opcode === "MUL.S") {
+      value = parseInt(values.vj, 10) * parseInt(values.vk, 10);
+    } else if (opcode === "DIV.D") {
+      value = parseInt(values.vj, 10) / parseInt(values.vk, 10);
+    } else if (opcode === "DIV.S") {
+      value = parseInt(values.vj, 10) / parseInt(values.vk, 10);
+    } else if (opcode === "LW" || opcode === "L.S") {
+      // Check if data is already in the cache
+      const cachedBlock = cache.find((block) =>
+        block.block.some((entry) => entry.address === targetAddress)
+      );
+
+      if (cachedBlock) {
+        console.log("Cache hit");
+
+        // Find the specific entry in the cache block
+        const targetEntry = cachedBlock.block.find(
+          (entry) => entry.address === targetAddress
+        );
+
+        if (targetEntry) {
+          temp[0].value = targetEntry.value; // Update temp with the target value
+        }
+      } else {
+        console.log("Cache miss");
+
+        // Find the block in memory that contains the target address
+        const memoryBlock = memory.find((block) =>
           block.block.some((entry) => entry.address === targetAddress)
         );
-    
-        if (cachedBlock) {
-          console.log('Cache hit');
-          temp = cachedBlock.block
-            .filter((entry) => entry.address >= targetAddress && entry.address < targetAddress + blockSize)
-            .map((entry) => entry.value);
-        } else {
-          console.log('Cache miss');
-          const memoryBlock = memory.find((block) =>
-            block.block.some((entry) => entry.address === targetAddress)
+
+        if (memoryBlock) {
+          // Find the specific entry in the memory block
+          const targetEntry = memoryBlock.block.find(
+            (entry) => entry.address === targetAddress
           );
-    
-          if (memoryBlock) {
-            const newBlock = memoryBlock.block.filter(
-              (entry) => entry.address >= targetAddress && entry.address < targetAddress + blockSize
-            );
-    
-            temp = newBlock.map((entry) => entry.value);
-    
-            // Update cache
-            setCache((prevCache) => {
-              const updatedCache = [...prevCache];
-              if (updatedCache.length >= cacheSize) {
-                updatedCache.shift(); // Evict the oldest block
-              }
-              updatedCache.push(memoryBlock);
-              return updatedCache;
-            });
+
+          if (targetEntry) {
+            temp[0].value = targetEntry.value; // Update temp with the target value
           }
+
+          // Update cache with the entire memory block
+          setCache((prevCache) => {
+            const updatedCache = [...prevCache];
+            if (updatedCache.length >= cacheSize) {
+              updatedCache.shift(); // Evict the oldest block
+            }
+            updatedCache.push(memoryBlock); // Add the fetched memory block
+            return updatedCache;
+          });
         }
-        console.log("Temp values:", temp);
-        console.log("Updated cache:", cache);
+      }
+
+      console.log("Temp values (target only):", temp);
+      console.log("Updated cache:", cache);
+    } else if (opcode === "LD" || opcode === "L.D") {
+      // Calculate the current block and the next block
+      const currentBlockStart =
+        Math.floor(targetAddress / blockSize) * blockSize;
+      const nextBlockStart = currentBlockStart + blockSize;
+
+      // Check if data is already in the cache
+      const cachedBlock = cache.find((block) =>
+        block.block.some((entry) => entry.address === targetAddress)
+      );
+
+      if (cachedBlock) {
+        console.log("Cache hit");
+
+        // Find the specific entry for the target address
+        const targetEntry = cachedBlock.block.find(
+          (entry) => entry.address === targetAddress
+        );
+
+        if (targetEntry) {
+          temp[0].value = targetEntry.value; // Update `temp` with the value at target address
+        }
+      } else {
+        console.log("Cache miss");
+
+        // Fetch the current block from memory
+        const memoryBlock = memory.find((block) =>
+          block.block.some((entry) => entry.address === currentBlockStart)
+        );
+
+        // Fetch the next block from memory if needed
+        const nextMemoryBlock = memory.find((block) =>
+          block.block.some((entry) => entry.address === nextBlockStart)
+        );
+
+        if (memoryBlock) {
+          // Find the specific entry in the current block for the target address
+          const targetEntry = memoryBlock.block.find(
+            (entry) => entry.address === targetAddress
+          );
+
+          if (targetEntry) {
+            temp[0].value = targetEntry.value; // Update `temp` with the value at target address
+          }
+
+          // Update cache with the current block
+          setCache((prevCache) => {
+            const updatedCache = [...prevCache];
+            if (updatedCache.length >= cacheSize) {
+              updatedCache.shift(); // Evict the oldest block if cache is full
+            }
+            updatedCache.push(memoryBlock);
+            return updatedCache;
+          });
+        }
+
+        if (nextMemoryBlock) {
+          // Find the specific entry in the next block for the target address
+          const nextTargetEntry = nextMemoryBlock.block.find(
+            (entry) => entry.address === targetAddress
+          );
+
+          if (nextTargetEntry) {
+            temp[0].value = nextTargetEntry.value; // Update `temp` with the value from the next block
+          }
+
+          // Update cache with the next block
+          setCache((prevCache) => {
+            const updatedCache = [...prevCache];
+            if (updatedCache.length >= cacheSize) {
+              updatedCache.shift(); // Evict the oldest block if cache is full
+            }
+            updatedCache.push(nextMemoryBlock);
+            return updatedCache;
+          });
+        }
+      }
+
+      console.log("Temp values:", temp);
+      console.log("Updated cache:", cache);
+    } else if (opcode === "SW" || opcode === "S.S") {
+      // Insert logic for SW
       
-    } else if (opcode === 'LD') {
-        // Insert logic for LD
-        return "LD instruction translated";
-    } else if (opcode === 'L.S') {
-        // Insert logic for L.S
-        return "L.S instruction translated";
-    } else if (opcode === 'L.D') {
-        // Insert logic for L.D
-        return "L.D instruction translated";
-    } else if (opcode === 'SW') {
-        // Insert logic for SW
-        return "SW instruction translated";
-    } else if (opcode === 'SD') {
-        // Insert logic for SD
-        return "SD instruction translated";
-    } else if (opcode === 'S.S') {
-        // Insert logic for S.S
-        return "S.S instruction translated";
-    } else if (opcode === 'S.D') {
-        // Insert logic for S.D
-        return "S.D instruction translated";
-    } else if (opcode === 'BNE') {
-        // Insert logic for BNE
-        return "BNE instruction translated";
-    } else if (opcode === 'BEQ') {
-        // Insert logic for BEQ
-        return "BEQ instruction translated";
+    } else if (opcode === "SD" || opcode === "S.D") {
+      // Insert logic for SD
+    
+    } else if (opcode === "BNE") {
+      // Insert logic for BNE
+     
+    } else if (opcode === "BEQ") {
+      // Insert logic for BEQ
+    
     } else {
-        return null;
+      return null;
     }
 
     const wbValue = {
-      regName,
-      value,
-      registerationState,
-      index
-    }
-    setwb([...wb, wbValue]);
+      regName, // The target register name (e.g., R1)
+      value: temp[0].value, // The value from temp that was fetched (i.e., the value at targetAddress)
+      registerationState, // The registration state (e.g., 'Load')
+      index, // The instruction index
+    };
+    console.log("wbValue", wbValue);
 
-}
-
-
-const areInSameBlock = (address1, address2, blockSize) => {
-  return Math.floor(address1 / blockSize) === Math.floor(address2 / blockSize);
-};
-
-
-const executeInstructions = () => {
-  console.log("We are in cycle: ", cycle);
-
-  // Handle Add/Sub Float Instructions
-  for (let i = 0; i < addSubFloat.length; i++) {
-    if (addSubFloat[i].busy) {
-      if (addSubFloat[i].qj === '' && addSubFloat[i].qk === '') {
-        addSubFloat[i].latency -= 1;
-        console.log("Add/Sub Float Latency:", addSubFloat[i].latency);
-
-        if (addSubFloat[i].latency === 0) {
-          ALU("addSubFloat", i, addSubFloat[i].instruction);
-       
-        }
-      }
-    }
+    // Add the write-back value to the write-back queue
+    setwb((prevWb) => [...prevWb, wbValue]);
   }
 
-  // Handle Mul/Div Float Instructions
-  for (let i = 0; i < mulDivFloat.length; i++) {
-    if (mulDivFloat[i].busy) {
-      if (mulDivFloat[i].qj === '' && mulDivFloat[i].qk === '') {
-        mulDivFloat[i].latency -= 1;
-        console.log("Mul/Div Float Latency:", mulDivFloat[i].latency);
-
-        if (mulDivFloat[i].latency === 0) {
-          ALU("mulDivFloat", i, mulDivFloat[i].instruction);
-
-        }
-      }
-    }
-  }
-
-
-  
-
-    
-    for(let i=0; i<load.length;i++){
-      if(load[i].busy && load[i].issueCycle<cycle){
-        if(load[i].qi === '' ){
-          console.log("load",load[i].loop);
-          
-          if(load[i].loop == false){
-          for(let i=0;i<cache.length;i++){
-            console.log('da5lnaa al for loop mara',i);
-            for (let j=0;j<cache[i].block.length;j++){
-            if(cache[i].block[j].address===load[i].address){
-                load[i].bool=true;
-                console.log("load[i].bool",load[i].bool);
-            }  
-            }
-          }
-          load[i].loop=true;
-          console.log("loooooooppppp",load[i].loop);
-      }
-    }
-    if (load[i].bool===false && load[i].counter===0){
-      load[i].latency=2;
-      load[i].counter++;
-    }
-    load[i].latency = load[i].latency - 1;
-    console.log("load[i].latency",load[i].latency);
-    if (load[i].latency===0){
-      console.log('d5alt henaa kam maraa');
-      ALU("load",i,load[i].instruction); 
-    }
-    }
-    
+  const areInSameBlock = (address1, address2, blockSize) => {
+    return (
+      Math.floor(address1 / blockSize) === Math.floor(address2 / blockSize)
+    );
   };
-    
-  
-};
 
+  const executeInstructions = () => {
+    console.log("We are in cycle: ", cycle);
 
+    // Handle Add/Sub Float Instructions
+    for (let i = 0; i < addSubFloat.length; i++) {
+      if (addSubFloat[i].busy) {
+        if (addSubFloat[i].qj === "" && addSubFloat[i].qk === "") {
+          addSubFloat[i].latency -= 1;
+          console.log("Add/Sub Float Latency:", addSubFloat[i].latency);
 
+          if (addSubFloat[i].latency === 0) {
+            ALU("addSubFloat", i, addSubFloat[i].instruction);
+          }
+        }
+      }
+    }
+
+    // Handle Mul/Div Float Instructions
+    for (let i = 0; i < mulDivFloat.length; i++) {
+      if (mulDivFloat[i].busy) {
+        if (mulDivFloat[i].qj === "" && mulDivFloat[i].qk === "") {
+          mulDivFloat[i].latency -= 1;
+          console.log("Mul/Div Float Latency:", mulDivFloat[i].latency);
+
+          if (mulDivFloat[i].latency === 0) {
+            ALU("mulDivFloat", i, mulDivFloat[i].instruction);
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < load.length; i++) {
+      if (load[i].busy && load[i].issueCycle < cycle) {
+        if (load[i].qi === "") {
+          console.log("load", load[i].loop);
+
+          if (load[i].loop == false) {
+            for (let i = 0; i < cache.length; i++) {
+              console.log("da5lnaa al for loop mara", i);
+              for (let j = 0; j < cache[i].block.length; j++) {
+                if (cache[i].block[j].address === load[i].address) {
+                  load[i].bool = true;
+                  console.log("load[i].bool", load[i].bool);
+                }
+              }
+            }
+            load[i].loop = true;
+            console.log("loooooooppppp", load[i].loop);
+          }
+        }
+        if (load[i].bool === false && load[i].counter === 0) {
+          load[i].latency = 2;
+          load[i].counter++;
+        }
+        load[i].latency = load[i].latency - 1;
+        console.log("load[i].latency", load[i].latency);
+        if (load[i].latency === 0) {
+          console.log("d5alt henaa kam maraa");
+          ALU("load", i, load[i].instruction);
+        }
+      }
+    }
+  };
 
   function issue() {
     console.log("Issued in Cycle: ", cycle);
     console.log("Counter: ", counter);
-    if(counter >= instructions.length){
+    if (counter >= instructions.length) {
       return;
     }
-    if(instructions[counter].issued){
+    if (instructions[counter].issued) {
       return;
     }
     let inst = instructions[counter].instruction;
     console.log("Processing instruction:", inst);
 
-    let parts = inst.trim().split(/\s+/);    
+    let parts = inst.trim().split(/\s+/);
     let opcode = parts[0];
 
-    if (['DADDI', 'ADD.S', 'ADD.D', 'SUB.S', 'SUB.D', 'DSUBI'].includes(opcode)) {
+    if (
+      ["DADDI", "ADD.S", "ADD.D", "SUB.S", "SUB.D", "DSUBI"].includes(opcode)
+    ) {
       console.log("Opcode identified:", opcode);
 
       for (let i = 0; i < addSubFloat.length; i++) {
@@ -628,29 +753,28 @@ const executeInstructions = () => {
 
         if (!addSubFloat[i].busy) {
           instructions[counter].issued = true;
-          instructions[counter].resName=addSubFloat[i].name;
+          instructions[counter].resName = addSubFloat[i].name;
           addSubFloat[i].instruction = counter;
           console.log("Available functional unit found at index:", i);
-          for (let j = 0; j < registerFile.length; j++) {        
+          for (let j = 0; j < registerFile.length; j++) {
             if (registerFile[j].regname === parts[2]) {
               if (registerFile[j].qi === 0) {
                 addSubFloat[i].vj = registerFile[j].value;
-                addSubFloat[i].qj = '';
+                addSubFloat[i].qj = "";
               } else {
-                addSubFloat[i].vj = '';
+                addSubFloat[i].vj = "";
                 addSubFloat[i].qj = registerFile[j].qi;
               }
             }
-            if ('DADDI'===opcode ||'DSUBI'===opcode){
-              addSubFloat[i].vk =parts[3];
-              addSubFloat[i].qk = '';
-            }
-            else if (registerFile[j].regname === parts[3]) {
+            if ("DADDI" === opcode || "DSUBI" === opcode) {
+              addSubFloat[i].vk = parts[3];
+              addSubFloat[i].qk = "";
+            } else if (registerFile[j].regname === parts[3]) {
               if (registerFile[j].qi === 0) {
                 addSubFloat[i].vk = registerFile[j].value;
-                addSubFloat[i].qk = '';
+                addSubFloat[i].qk = "";
               } else {
-                addSubFloat[i].vk = '';
+                addSubFloat[i].vk = "";
                 addSubFloat[i].qk = registerFile[j].qi;
               }
             }
@@ -661,11 +785,9 @@ const executeInstructions = () => {
           addSubFloat[i].latency = instructions[counter].value;
 
           // Update destination register's Qi
-          for (let j = 0; j < registerFile.length; j++) {  
-
+          for (let j = 0; j < registerFile.length; j++) {
             if (registerFile[j].regname === parts[1]) {
               registerFile[j].qi = addSubFloat[i].name;
-
             }
           }
 
@@ -674,31 +796,31 @@ const executeInstructions = () => {
           break; // Exit after assigning to a functional unit
         }
       }
-    } else if (['MUL.S',  'MUL.D', 'DIV.S', 'DIV.D'].includes(opcode)) {
+    } else if (["MUL.S", "MUL.D", "DIV.S", "DIV.D"].includes(opcode)) {
       console.log("Opcode identified:", opcode);
       for (let i = 0; i < mulDivFloat.length; i++) {
         console.log("Checking functional unit:", mulDivFloat[i]);
 
-        if (!mulDivFloat[i].busy){
+        if (!mulDivFloat[i].busy) {
           instructions[counter].issued = true;
-          instructions[counter].resName=mulDivFloat[i].name;
+          instructions[counter].resName = mulDivFloat[i].name;
           mulDivFloat[i].instruction = counter;
-          for (let j = 0; j < registerFile.length; j++) {        
+          for (let j = 0; j < registerFile.length; j++) {
             if (registerFile[j].regname === parts[2]) {
               if (registerFile[j].qi === 0) {
                 mulDivFloat[i].vj = registerFile[j].value;
-                mulDivFloat[i].qj = '';
+                mulDivFloat[i].qj = "";
               } else {
-                mulDivFloat[i].vj = '';
+                mulDivFloat[i].vj = "";
                 mulDivFloat[i].qj = registerFile[j].qi;
               }
             }
-             if (registerFile[j].regname === parts[3]) {
+            if (registerFile[j].regname === parts[3]) {
               if (registerFile[j].qi === 0) {
                 mulDivFloat[i].vk = registerFile[j].value;
-                mulDivFloat[i].qk = '';
+                mulDivFloat[i].qk = "";
               } else {
-                mulDivFloat[i].vk = '';
+                mulDivFloat[i].vk = "";
                 mulDivFloat[i].qk = registerFile[j].qi;
               }
             }
@@ -708,7 +830,7 @@ const executeInstructions = () => {
           mulDivFloat[i].latency = instructions[counter].value;
 
           // Update destination register's Qi
-          for (let j = 0; j < registerFile.length; j++) {  
+          for (let j = 0; j < registerFile.length; j++) {
             if (registerFile[j].regname === parts[1]) {
               registerFile[j].qi = mulDivFloat[i].name;
             }
@@ -719,76 +841,82 @@ const executeInstructions = () => {
           break;
         }
       }
-      } else if (['LW', 'L.D',  'L.S', 'LD', 'LW'].includes(opcode)) { 
-        console.log('d5alnaa hena al Load');
-        console.log("parts charAt",parts[2].charAt(0));
-        
-        for (let i = 0; i < load.length; i++) {
-          if (!load[i].busy){
-            console.log('not busy');
-            instructions[counter].issued = true;
-            console.log('inst',instructions[counter]);
-            instructions[counter].resName=load[i].name;
-            console.log('inst name',instructions[counter]);
-            load[i].instruction = counter;
-            load[i].issueCycle=cycle;
-            console.log('load array',load);
-            console.log('load counter',load[i].instruction);
-            load[i].busy=true;
-            if(parts[2].charAt(0)==='R'){
-              load[i].qi=parts[2];
-            }else {
-              load[i].address=parts[2]; 
-            }
-                           
-            for (let j = 0; j < registerFile.length; j++) {  
-              console.log("hereee",parts[1]);
-              if (registerFile[j].regname === parts[1]) {
-                console.log("Load name",load[i].name);
-                registerFile[j].qi = load[i].name;
-              }
-            }
-            setCounter(counter + 1);
-          break;
-          }
-        } 
-      } else if ( [ 'SW', 'SD', 'S.D', 'S.S'].includes(opcode)) {    
-        for (let i = 0; i < store.length; i++) {
-          if (!store[i].busy){
-            console.log('not busy');
-            instructions[counter].issued = true;
-            console.log('inst',instructions[counter]);
-            instructions[counter].resName=store[i].name;
-            console.log('inst name',instructions[counter]);
-            store[i].instruction = counter;
-            console.log('load array',store);
-            console.log('load counter',store[i].instruction);
-            store[i].busy=true;
-            store[i].address=parts[2];
-            setCounter(counter + 1);
-          break;
-          }
-        }  
-      } else if (['BNE', 'BEQ'].includes(opcode)) {
-   
-      }
+    } else if (["LW", "L.D", "L.S", "LD"].includes(opcode)) {
+      console.log("d5alnaa hena al Load");
+      console.log("parts charAt", parts[2].charAt(0));
 
-  };
+      for (let i = 0; i < load.length; i++) {
+        if (!load[i].busy) {
+          console.log("not busy");
+          instructions[counter].issued = true;
+          console.log("inst", instructions[counter]);
+          instructions[counter].resName = load[i].name;
+          console.log("inst name", instructions[counter]);
+          load[i].instruction = counter;
+          load[i].issueCycle = cycle;
+          console.log("load array", load);
+          console.log("load counter", load[i].instruction);
+          load[i].busy = true;
+          if (parts[2].charAt(0) === "R") {
+            load[i].qi = parts[2];
+          } else {
+            load[i].address = parts[2];
+          }
+
+          for (let j = 0; j < registerFile.length; j++) {
+            console.log("hereee", parts[1]);
+            if (registerFile[j].regname === parts[1]) {
+              console.log("Load name", load[i].name);
+              registerFile[j].qi = load[i].name;
+            }
+          }
+          setCounter(counter + 1);
+          break;
+        }
+      }
+    } else if (["SW", "SD", "S.D", "S.S"].includes(opcode)) {
+      for (let i = 0; i < store.length; i++) {
+        if (!store[i].busy) {
+          console.log("not busy");
+          instructions[counter].issued = true;
+          console.log("inst", instructions[counter]);
+          instructions[counter].resName = store[i].name;
+          console.log("inst name", instructions[counter]);
+          store[i].instruction = counter;
+          console.log("store array", store);
+          console.log("store counter", store[i].instruction);
+          store[i].busy = true;
+          for (let j = 0; j < registerFile.length; j++) {
+            
+            if (registerFile[j].regname === parts[1]) {
+              if (registerFile[j].qi === 0) {
+                store[i].v = registerFile[j].value;
+              }else{
+                store[i].qi = registerFile[j].qi;
+              }   
+            }
+          }
+          store[i].address = parts[2];
+          setCounter(counter + 1);
+          break;
+        }
+      }
+    } else if (["BNE", "BEQ"].includes(opcode)) {
+    }
+  }
 
   const nextCycle = async () => {
     if (isRunning) {
       setCycle((cycle) => cycle + 1);
       console.log("cycle");
-      if(cycle === 1){
+      if (cycle === 1) {
         issue();
-      }
-      else{
-        console.log('cache',cache);
+      } else {
+        console.log("cache", cache);
         issue();
         checkWriteBack();
         executeInstructions();
       }
-
     }
   };
 
@@ -796,10 +924,10 @@ const executeInstructions = () => {
     return station.map((row, index) => (
       <tr key={index} style={tableRowStyle}>
         <td style={tableCellStyle}>{row.busy.toString()}</td>
-       
-        {type !== 'load' && type !== 'store' && (
+
+        {type !== "load" && type !== "store" && (
           <>
-           <td style={tableCellStyle}>{row.opcode}</td>
+            <td style={tableCellStyle}>{row.opcode}</td>
             <td style={tableCellStyle}>{row.vj}</td>
             <td style={tableCellStyle}>{row.vk}</td>
             <td style={tableCellStyle}>{row.qj}</td>
@@ -807,19 +935,22 @@ const executeInstructions = () => {
           </>
         )}
 
-        {type === 'store' && (
+        {type === "store" && (
           <>
-          <td style={tableCellStyle}> {row.address}</td>
-        </>)
-          }
-           {type === 'load' && (
-          <>
-          <td style={tableCellStyle}> {row.address}</td>
-          <td style={tableCellStyle}> {row.qi}</td>
+            <td style={tableCellStyle}> {row.address}</td>
+            <td style={tableCellStyle}> {row.v}</td>
+            {/* <td style={tableCellStyle}> {row.qi}</td> */}
 
-        </>)
-          }
-        <td style={tableCellStyle}>{row.A || row.qi || ''}</td>
+
+          </>
+        )}
+        {type === "load" && (
+          <>
+            <td style={tableCellStyle}> {row.address}</td>
+            <td style={tableCellStyle}> {row.qi}</td>
+          </>
+        )}
+        <td style={tableCellStyle}>{row.A || row.qi || ""}</td>
       </tr>
     ));
   };
@@ -828,7 +959,6 @@ const executeInstructions = () => {
     setIsRunning(true);
     setCycle(0);
     setCycle((cycle) => cycle + 1);
-
   };
 
   const simulateCycle = () => {
@@ -840,8 +970,10 @@ const executeInstructions = () => {
   const issueInstructions = () => {
     for (let i = 0; i < instructions.length; i++) {
       const inst = instructions[i];
-      if (inst.value === '') continue; // Skip if latency not set
-      const availableStation = addSubFloat.findIndex(station => !station.busy);
+      if (inst.value === "") continue; // Skip if latency not set
+      const availableStation = addSubFloat.findIndex(
+        (station) => !station.busy
+      );
       if (availableStation !== -1) {
         const { opcode, vj, vk } = parseInstruction(inst.instruction);
         addSubFloat[availableStation] = {
@@ -849,9 +981,9 @@ const executeInstructions = () => {
           opcode,
           vj,
           vk,
-          qj: '',
-          qk: '',
-          A: '',
+          qj: "",
+          qk: "",
+          A: "",
         };
         setAddSubFloat([...addSubFloat]);
         instructions[i].issued = true;
@@ -859,7 +991,7 @@ const executeInstructions = () => {
     }
   };
   const parseInstruction = (instruction) => {
-    const parts = instruction.split(' ');
+    const parts = instruction.split(" ");
     const opcode = parts[0];
     const vj = parts[1]; // Assuming the second part is vj
     const vk = parts[2]; // Assuming the third part is vk
@@ -870,21 +1002,21 @@ const executeInstructions = () => {
     <div>
       <h1>Tomasulo Algorithm - Reservation Stations</h1>
       <div>
-          <label>Cache Size: </label>
-          <input
-            type="number"
-            value={cacheSize}
-            onChange={(e) => setCacheSize(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Block Size: </label>
-          <input
-            type="number"
-            value={blockSize}
-            onChange={(e) => setBlockSize(e.target.value)}
-          />
-        </div>
+        <label>Cache Size: </label>
+        <input
+          type="number"
+          value={cacheSize}
+          onChange={(e) => setCacheSize(e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Block Size: </label>
+        <input
+          type="number"
+          value={blockSize}
+          onChange={(e) => setBlockSize(e.target.value)}
+        />
+      </div>
       <div>
         <h2>Add/Sub Float Reservation Station</h2>
         <label>Number of Rows: </label>
@@ -905,7 +1037,7 @@ const executeInstructions = () => {
               <th style={tableHeaderStyle}>A</th>
             </tr>
           </thead>
-          <tbody>{renderRows(addSubFloat, 'addSubFloat')}</tbody>
+          <tbody>{renderRows(addSubFloat, "addSubFloat")}</tbody>
         </table>
       </div>
 
@@ -929,7 +1061,7 @@ const executeInstructions = () => {
               <th style={tableHeaderStyle}>A</th>
             </tr>
           </thead>
-          <tbody>{renderRows(mulDivFloat, 'mulDivFloat')}</tbody>
+          <tbody>{renderRows(mulDivFloat, "mulDivFloat")}</tbody>
         </table>
       </div>
 
@@ -953,7 +1085,7 @@ const executeInstructions = () => {
               <th style={tableHeaderStyle}>A</th>
             </tr>
           </thead>
-          <tbody>{renderRows(intAddSub, 'intAddSub')}</tbody>
+          <tbody>{renderRows(intAddSub, "intAddSub")}</tbody>
         </table>
       </div>
 
@@ -972,7 +1104,7 @@ const executeInstructions = () => {
               <th style={tableHeaderStyle}>Address</th>
             </tr>
           </thead>
-          <tbody>{renderRows(load, 'load')}</tbody>
+          <tbody>{renderRows(load, "load")}</tbody>
         </table>
       </div>
 
@@ -990,14 +1122,14 @@ const executeInstructions = () => {
               <th style={tableHeaderStyle}>Busy</th>
               <th style={tableHeaderStyle}>Address</th>
               <th style={tableHeaderStyle}>V</th>
-              <th style={tableHeaderStyle}>Q</th>
+              <th style={tableHeaderStyle}>Qi</th>
             </tr>
           </thead>
-          <tbody>{renderRows(store, 'store')}</tbody>
+          <tbody>{renderRows(store, "store")}</tbody>
         </table>
       </div>
 
-      <div >
+      <div>
         <h2>Input Instructions</h2>
         <textarea
           rows="5"
@@ -1019,10 +1151,10 @@ const executeInstructions = () => {
             <label>{opcode}: </label>
             <input
               type="number"
-              value={latencies[opcode] || ''}
+              value={latencies[opcode] || ""}
               onChange={(e) => handleLatencyChange(opcode, e.target.value)}
             />
-          </div> 
+          </div>
         ))}
         <button onClick={handleLatencyInput}>Apply Latencies</button>
       </div>
@@ -1080,24 +1212,24 @@ const executeInstructions = () => {
 
 // Styles for tables
 const tableStyle = {
-  border: '1px solid black',
-  width: '100%',
-  borderCollapse: 'collapse',
+  border: "1px solid black",
+  width: "100%",
+  borderCollapse: "collapse",
 };
 
 const tableHeaderStyle = {
-  border: '1px solid black',
-  padding: '5px',
-  backgroundColor: '#f2f2f2',
+  border: "1px solid black",
+  padding: "5px",
+  backgroundColor: "#f2f2f2",
 };
 
 const tableCellStyle = {
-  border: '1px solid black',
-  padding: '5px',
+  border: "1px solid black",
+  padding: "5px",
 };
 
 const tableRowStyle = {
-  border: '1px solid black',
+  border: "1px solid black",
 };
 
 export default Tomasulo;

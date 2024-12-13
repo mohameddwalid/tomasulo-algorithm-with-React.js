@@ -16,6 +16,8 @@ const Tomasulo = () => {
   const [intAddSub, setIntAddSub] = useState([]);
   const [load, setLoad] = useState([]);
   const [store, setStore] = useState([]);
+
+  
   const [dataBus, setDataBus] = useState([
     {
       tag: '',
@@ -74,9 +76,8 @@ console.log("Memory",memory);
   //   address: '',
   //   value: '',
   // }));
-  let cache = Array.from({ length: 0 }, (_, index) => ({
-     
-  }));
+  const [cache, setCache] = useState([]);
+
   
   const initializeTables = () => {
 // console.log('block',block);
@@ -437,93 +438,49 @@ const handleLatencyChange = (opcode, latency) => {
        value=parseInt(values.vj,10)/parseInt(values.vk,10);
     } else if (opcode === 'DIV.S') {
       value=parseInt(values.vj,10)/parseInt(values.vk,10);
-    } else if (opcode === 'LW') {
+    } 
     
-      if(cache.length>0){
-        let temp=[];
-        let bool =false;
-        let emptyTempBoolean=false;
-        for(let i=0;i<cache.length;i++){
-          console.log('mfrod mtd5olsh henaa');
-          
-         for (let j=0;j<cache[i].block.length;j++){
-          if(cache[i].block[j].address===parts[2]){
-            for (let x=0;x<cache.length;x++){
-              for(let y=0;y<blockSize;y++){
-                if(cache[x].block[y].address===parseInt(parts[2])){
-                  console.log('cache block in Alu Value',cache[x].block[y].value);
-                  temp.push(cache[x].block[y].value);
-                  temp.push(cache[x].block[y+1].value);
-                  temp.push(cache[x].block[y+2].value);
-                  temp.push(cache[x].block[y+3].value);
-                }
+      else if (opcode === 'LW') {
+        let temp = [];
+        const targetAddress = parseInt(parts[2], 10);
+    
+        // Check if data is already in the cache
+        const cachedBlock = cache.find((block) =>
+          block.block.some((entry) => entry.address === targetAddress)
+        );
+    
+        if (cachedBlock) {
+          console.log('Cache hit');
+          temp = cachedBlock.block
+            .filter((entry) => entry.address >= targetAddress && entry.address < targetAddress + blockSize)
+            .map((entry) => entry.value);
+        } else {
+          console.log('Cache miss');
+          const memoryBlock = memory.find((block) =>
+            block.block.some((entry) => entry.address === targetAddress)
+          );
+    
+          if (memoryBlock) {
+            const newBlock = memoryBlock.block.filter(
+              (entry) => entry.address >= targetAddress && entry.address < targetAddress + blockSize
+            );
+    
+            temp = newBlock.map((entry) => entry.value);
+    
+            // Update cache
+            setCache((prevCache) => {
+              const updatedCache = [...prevCache];
+              if (updatedCache.length >= cacheSize) {
+                updatedCache.shift(); // Evict the oldest block
               }
-
-            }
-          }  
-         }
-         if(bool){
-          break;
-         }
-        }
-        if(temp.length===0){
-
-          emptyTempBoolean=true; 
-        }
-        if(emptyTempBoolean){
-          for (let j=0;j=memory.length;j++){
-            for (let k=0;k<memory[j].block.length;k++){
-                if(  memory[j].block[k].address===parts[2]){
-                  cache.push(memory[j]);
-                  temp.push(cache[j].block[k].value);
-                  temp.push(cache[j].block[k+1].value);
-                  temp.push(cache[j].block[k+2].value);
-                  temp.push(cache[j].block[k+3].value);
-                  bool=true;
-                  break;
-                }
-            }
+              updatedCache.push(memoryBlock);
+              return updatedCache;
+            });
           }
         }
-        console.log("temp when cache isn't empty",temp);
-      } else { 
-       let temp=[];
-        let bool =false;
-        for (let j=0;j<memory.length;j++){
-          console.log('memory Block',memory[j]);
-          for (let k=0;k<memory[j].block.length;k++){
-            console.log('memory block address 4',memory[j].block[k].address);
-            console.log('parts',parseInt(parts[2]));
-              if( memory[j].block[k].address===parseInt(parts[2])){
-                console.log('henaa');
-                cache.push(memory[j]);
-                console.log('cache in Alu',cache);
-                for (let x=0;x<cache.length;x++){
-                  for(let y=0;y<blockSize;y++){
-                    if(cache[x].block[y].address===parseInt(parts[2])){
-                      console.log('cache block in Alu Value',cache[x].block[y].value);
-                      temp.push(cache[x].block[y].value);
-                      temp.push(cache[x].block[y+1].value);
-                      temp.push(cache[x].block[y+2].value);
-                      temp.push(cache[x].block[y+3].value);
-                    }
-                  }
-
-                }
-             
-              }
-              // console.log('temp',temp);
-              
-          }
-          if(bool){
-            break;
-          }
-        }
-        console.log("memory After",memory);
-        console.log("Cache After",cache);
-        console.log("Temp when cache is empty",temp);
-       };
-       console.log("Cache b3d load",cache);
+        console.log("Temp values:", temp);
+        console.log("Updated cache:", cache);
+      
     } else if (opcode === 'LD') {
         // Insert logic for LD
         return "LD instruction translated";
@@ -565,69 +522,108 @@ const handleLatencyChange = (opcode, latency) => {
 
 }
 
-  const executeInstructions = () => {
-    console.log("We are in cycle: ",cycle);
-    for(let i=0; i<addSubFloat.length;i++){
-      if(addSubFloat[i].busy){
-        console.log(addSubFloat[i].qj);
-        if(addSubFloat[i].qj === '' && addSubFloat[i].qk === ''){
-          console.log("da5al");
 
-          addSubFloat[i].latency = addSubFloat[i].latency - 1;
-          console.log("addSubFloat[i].latency",addSubFloat[i].latency);
-          if(addSubFloat[i].latency == 0){
-            console.log("Fadyaa");
-            ALU("addSubFloat", i , addSubFloat[i].instruction);
-          }
-        }
-      }
-    }
-    for(let i=0; i<mulDivFloat.length;i++){
-      if(mulDivFloat[i].busy){
-        console.log(mulDivFloat[i].qj);
-        if(mulDivFloat[i].qj === '' && mulDivFloat[i].qk === ''){
-          console.log("da5al");
-
-          mulDivFloat[i].latency = mulDivFloat[i].latency - 1;
-          console.log("mulDivFloat[i].latency",mulDivFloat[i].latency);
-          if(mulDivFloat[i].latency == 0){
-            console.log("Fadyaa");
-            ALU('mulDivFloat',i,mulDivFloat[i].instruction);
-          }
-        }
-      }
-    }
-    for(let i=0; i<load.length;i++){
-      if(load[i].busy){
-        if(load[i].qi === '' ){
-          console.log("load",load[i].loop);
-          
-          if(load[i].loop == false){
-          for(let i=0;i<cache.length;i++){
-            console.log('da5lnaa al for loop mara',i);
-            for (let j=0;j<cache[i].block.length;j++){
-             if(cache[i].block[j].address===load[i].address){
-                load[i].bool=true;
-             }  
-            }
-          }
-          load[i].loop=true;
-       }
-     }
-     if (load[i].bool==false && load[i].counter===0){
-      load[i].latency=2;
-      load[i].counter++;
-    }
-    load[i].latency = load[i].latency - 1;
-    console.log("load[i].latency",load[i].latency);
-    if (load[i].latency===0){
-      console.log('d5alt henaa kam maraa');
-      ALU("load",i,load[i].instruction); 
-    }
-    }
-    
-  };
+const areInSameBlock = (address1, address2, blockSize) => {
+  return Math.floor(address1 / blockSize) === Math.floor(address2 / blockSize);
 };
+
+
+const executeInstructions = () => {
+  console.log("We are in cycle: ", cycle);
+
+  // Handle Add/Sub Float Instructions
+  for (let i = 0; i < addSubFloat.length; i++) {
+    if (addSubFloat[i].busy) {
+      if (addSubFloat[i].qj === '' && addSubFloat[i].qk === '') {
+        addSubFloat[i].latency -= 1;
+        console.log("Add/Sub Float Latency:", addSubFloat[i].latency);
+
+        if (addSubFloat[i].latency === 0) {
+          ALU("addSubFloat", i, addSubFloat[i].instruction);
+          addSubFloat[i].busy = false;
+        }
+      }
+    }
+  }
+
+  // Handle Mul/Div Float Instructions
+  for (let i = 0; i < mulDivFloat.length; i++) {
+    if (mulDivFloat[i].busy) {
+      if (mulDivFloat[i].qj === '' && mulDivFloat[i].qk === '') {
+        mulDivFloat[i].latency -= 1;
+        console.log("Mul/Div Float Latency:", mulDivFloat[i].latency);
+
+        if (mulDivFloat[i].latency === 0) {
+          ALU("mulDivFloat", i, mulDivFloat[i].instruction);
+          mulDivFloat[i].busy = false;
+        }
+      }
+    }
+  }
+
+
+  
+
+    // Track the block currently being accessed and the active load
+    let activeBlock = null; // Tracks the block currently being executed
+    let activeLoadCompleted = false; // Tracks if the current load completed in this cycle
+  
+    for (let i = 0; i < load.length; i++) {
+      if (load[i].busy) {
+        const currentAddress = parseInt(load[i].address, 10);
+  
+        // Check if this load depends on a previous one
+        if (
+          activeBlock === null || // No active load
+          !areInSameBlock(activeBlock, currentAddress, blockSize) // Independent block
+        ) {
+          // Independent block: Allow execution
+          activeBlock = Math.floor(currentAddress / blockSize) * blockSize;
+  
+          if (!load[i].loop) {
+            // Check cache for the requested address
+            for (let j = 0; j < cache.length; j++) {
+              for (let k = 0; k < cache[j].block.length; k++) {
+                if (cache[j].block[k].address === currentAddress) {
+                  load[i].bool = true; // Cache hit
+                }
+              }
+            }
+            load[i].loop = true;
+          }
+  
+          if (!load[i].bool && load[i].counter === 0) {
+            // Cache miss: Set latency to 2
+            load[i].latency = 2;
+            load[i].counter++;
+          }
+  
+          load[i].latency -= 1;
+          console.log(`Load ${load[i].name} Latency:`, load[i].latency);
+  
+          if (load[i].latency === 0) {
+            // Load completes in the current cycle
+            ALU("load", i, load[i].instruction);
+            load[i].busy = false; // Mark as completed
+            activeLoadCompleted = true;
+            console.log(`Load ${load[i].name} completed in cycle ${cycle}`);
+          }
+        } else if (!activeLoadCompleted) {
+          // Dependent block: Delay execution
+          console.log(
+            `Load ${load[i].name} delayed due to block conflict on address ${currentAddress}`
+          );
+        }
+      }
+    }
+  
+  
+  
+  
+};
+
+
+
 
   function issue() {
     console.log("Issued in Cycle: ", cycle);

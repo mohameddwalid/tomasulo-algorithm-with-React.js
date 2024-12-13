@@ -104,6 +104,7 @@ const Tomasulo = () => {
       value: "",
       registerationState: "",
       index: 0,
+      cycle: 0,
     },
   ]);
   // const block = Array.from({ length: parseInt(blockSize) }, (_, index) => ({
@@ -266,46 +267,6 @@ const Tomasulo = () => {
       return [...prevRegisterFile, ...newRegisterFile];
     });
   };
-  // console.log("ins",instructions);
-
-  const handleLatencyInput = () => {
-    // Dynamically populate latency values based on opcode
-    console.log(instructions);
-    const updatedInstructions = instructions.map((inst) => {
-      console.log("inst", inst);
-      const opcode = inst.instruction.split(" ")[0]; // Extract opcode
-      const latency = latencies[opcode] || ""; // Get latency for the opcode, or default to ''
-
-      return { ...inst, value: latency }; // Assign latency to value field
-    });
-
-    // Update state with instructions containing latency values
-    setInstructions(updatedInstructions);
-    console.log("updatedInstructions", updatedInstructions);
-  };
-
-  const handleLatencyChange = (opcode, latency) => {
-    console.log("opcode", opcode);
-    console.log("latency", latency);
-
-    // Update the latencies mapping
-    setLatencies((prevLatencies) => ({
-      ...prevLatencies,
-      [opcode]: latency,
-    }));
-    console.log("latencyyy", latencies);
-    // Recalculate latencies for instructions
-    setInstructions((prevInstructions) =>
-      prevInstructions.map((inst) => {
-        const instOpcode = inst.instruction.split(" ")[0];
-        if (instOpcode === opcode) {
-          console.log("ana da5lt henaa", instOpcode, opcode, latency);
-          return { ...inst, value: latency };
-        }
-        return inst;
-      })
-    );
-  };
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
@@ -358,17 +319,108 @@ const Tomasulo = () => {
     }
   };
 
+  const handleLatencyInput = () => {
+    // Dynamically populate latency values based on opcode
+    console.log(instructions);
+    const updatedInstructions = instructions.map((inst) => {
+      console.log("inst", inst);
+      const opcode = inst.instruction.split(" ")[0]; // Extract opcode
+      const latency = latencies[opcode] || ""; // Get latency for the opcode, or default to ''
+
+      return { ...inst, value: latency }; // Assign latency to value field
+    });
+
+    // Update state with instructions containing latency values
+    setInstructions(updatedInstructions);
+    console.log("updatedInstructions", updatedInstructions);
+  };
+
+  const handleLatencyChange = (opcode, latency) => {
+    console.log("opcode", opcode);
+    console.log("latency", latency);
+
+    // Update the latencies mapping
+    setLatencies((prevLatencies) => ({
+      ...prevLatencies,
+      [opcode]: latency,
+    }));
+    console.log("latencyyy", latencies);
+    // Recalculate latencies for instructions
+    setInstructions((prevInstructions) =>
+      prevInstructions.map((inst) => {
+        const instOpcode = inst.instruction.split(" ")[0];
+        if (instOpcode === opcode) {
+          console.log("ana da5lt henaa", instOpcode, opcode, latency);
+          return { ...inst, value: latency };
+        }
+        return inst;
+      })
+    );
+  };
+
   const writebackResults = (wb) => {
+    console.log("Writeback resultssssssss:", wb);
+
     for (let i = 0; i < registerFile.length; i++) {
       if (registerFile[i].regname === wb.regName) {
         registerFile[i].value = wb.value;
-        if (wb.registerationState === "Load") {
+        registerFile[i].qi = 0;
+
+        for (let i = 0; i < addSubFloat.length; i++) {
+          if (addSubFloat[i].qj === wb.resName) {
+            addSubFloat[i].qj = "";
+            addSubFloat[i].vj = wb.value;
+          }
+          if (addSubFloat[i].qk === wb.resName) {
+            addSubFloat[i].qk = "";
+            addSubFloat[i].vk = wb.value;
+          }
+        }
+
+        for (let i = 0; i < mulDivFloat.length; i++) {
+          if (mulDivFloat[i].qj === wb.resName) {
+            mulDivFloat[i].qj = "";
+            mulDivFloat[i].vj = wb.value;
+          }
+          if (mulDivFloat[i].qk === wb.resName) {
+            mulDivFloat[i].qk = "";
+            mulDivFloat[i].vk = wb.value;
+          }
+        }
+
+        for (let i = 0; i < load.length; i++) {
+          if (load[i].qi === wb.resName) {
+            load[i].qi = "";
+            load[i].address = wb.value;
+          }
+        }
+
+        for (let i = 0; i < store.length; i++) {
+          if (store[i].qi === wb.resName) {
+            store[i].qi = "";
+            store[i].address = wb.value;
+          }
+        }
+
+        if (wb.registerationState === "load") {
           load[wb.index].busy = false;
-          load[wb.index].qi = "";
-        } else if (wb.registerationState === "Store") {
+          load[wb.index].address = "";
+          load[wb.index].latency = -1;
+          load[wb.index].bool = false;
+          load[wb.index].loop = false;
+          load[wb.index].counter = 0;
+          load[wb.index].instruction = 0;
+          load[wb.index].issueCycle = 0;
+          load[wb.index].opcode = "";
+        } else if (wb.registerationState === "store") {
           store[wb.index].busy = false;
           store[wb.index].address = "";
-        } else if (wb.registerationState === "AddSubFloat") {
+          store[wb.index].latency = -1;
+          store[wb.index].instruction = 0;
+          store[wb.index].issueCycle = 0;
+          store[wb.index].opcode = "";
+          store[wb.index].v = 0;
+        } else if (wb.registerationState === "addSubFloat") {
           addSubFloat[wb.index].busy = false;
           addSubFloat[wb.index].opcode = "";
           addSubFloat[wb.index].vj = "";
@@ -404,33 +456,73 @@ const Tomasulo = () => {
   };
 
   const checkWriteBack = () => {
-    let arrayCounter = new Array(wb.length);
-    if (wb.length > 1) {
-      for (let j = 0; j < wb.length; j++) {
-        const regName = wb[j].regName;
+    if (wb.length === 0) {
+      return;
+    }
+
+    console.log("wbbbbbbbbb", wb);
+    let arrayArray = [];
+
+    let bool = false;
+
+    for (let i = 0; i < wb.length; i++) {
+      if (i < wb.length - 1 && wb[i].cycle === wb[i + 1].cycle) {
+        arrayArray.push(wb[i]);
+        wb.splice(i, 1);
+        bool = true;
+      }
+    }
+    if (bool) {
+      arrayArray.push(wb[0]);
+      wb.splice(0, 1);
+    } else {
+      arrayArray.push(wb[0]);
+      wb.splice(0, 1);
+    }
+
+    if (arrayArray.length > 1) {
+      let arrayCounter = new Array(arrayArray.length);
+      for (let j = 0; j < arrayArray.length; j++) {
+        const regName = arrayArray[j].regName;
         let counter = 0;
+        let reservationStationName = "";
+        for (let i = 0; i < registerFile.length; i++) {
+          if (registerFile[i].regname === regName) {
+            reservationStationName = registerFile[i].qi;
+          }
+        }
+
         for (let i = 0; i < addSubFloat.length; i++) {
-          if (addSubFloat[i].qj === regName || addSubFloat[i].qk === regName) {
+          if (
+            addSubFloat[i].qj === reservationStationName ||
+            addSubFloat[i].qk === reservationStationName
+          ) {
             counter++;
           }
         }
         for (let i = 0; i < mulDivFloat.length; i++) {
-          if (mulDivFloat[i].qj === regName || mulDivFloat[i].qk === regName) {
+          if (
+            mulDivFloat[i].qj === reservationStationName ||
+            mulDivFloat[i].qk === reservationStationName
+          ) {
             counter++;
           }
         }
         for (let i = 0; i < intAddSub.length; i++) {
-          if (intAddSub[i].qj === regName || intAddSub[i].qk === regName) {
+          if (
+            intAddSub[i].qj === reservationStationName ||
+            intAddSub[i].qk === reservationStationName
+          ) {
             counter++;
           }
         }
         for (let i = 0; i < load.length; i++) {
-          if (load[i].qi === regName) {
+          if (load[i].qi === reservationStationName) {
             counter++;
           }
         }
         for (let i = 0; i < store.length; i++) {
-          if (store[i].qi === regName) {
+          if (store[i].qi === reservationStationName) {
             counter++;
           }
         }
@@ -445,12 +537,15 @@ const Tomasulo = () => {
           index = i;
         }
       }
-      arrayCounter.slice(index, 1);
-      writebackResults(wb[index]);
+
+      writebackResults(arrayArray[index]);
     } else {
-      writebackResults(wb[0]);
+      if (arrayArray.length > 0) {
+        writebackResults(arrayArray[0]);
+      }
     }
   };
+
   function getValues(instructionIndex) {
     let letter = instructions[instructionIndex].resName.charAt(0);
     let dataNeed = {
@@ -577,7 +672,7 @@ const Tomasulo = () => {
           });
         }
       }
-      value =temp[0].value;
+      value = temp[0].value;
 
       console.log("Temp values (target only):", temp);
       console.log("Updated cache:", cache);
@@ -658,16 +753,20 @@ const Tomasulo = () => {
           });
         }
       }
-      value =temp[0].value;
+      value = temp[0].value;
       console.log("Temp values:", temp);
       console.log("Updated cache:", cache);
-    } else if (opcode === "SW" || opcode === "S.S" || opcode === "S.D" || opcode === "SD") { 
+    } else if (
+      opcode === "SW" ||
+      opcode === "S.S" ||
+      opcode === "S.D" ||
+      opcode === "SD"
+    ) {
       for (let i = 0; i < registerFile.length; i++) {
         if (registerFile[i].regname === parts[1]) {
           value = registerFile[i].value;
         }
       }
-
 
       console.log("Value to store:", value);
       console.log("Store address:", storeAddress);
@@ -683,7 +782,6 @@ const Tomasulo = () => {
       }
       console.log("Cache updated with store word.", cache);
       console.log("Memory updated with store word.", memory);
-
     } else {
       return null;
     }
@@ -693,6 +791,7 @@ const Tomasulo = () => {
       value, // The value from temp that was fetched (i.e., the value at targetAddress)
       registerationState, // The registration state (e.g., 'Load')
       index, // The instruction index
+      cycle, // The current cycle
     };
     console.log("wbValue", wbValue);
 
@@ -967,57 +1066,45 @@ const Tomasulo = () => {
         }
       }
     } else if (["BNE"].includes(opcode)) {
-      let reg1=0;
-      let reg2=0;
-      for(let i = 0; i < registerFile.length; i++) {
-        if(registerFile[i].regname === parts[1]) {
+      let reg1 = 0;
+      let reg2 = 0;
+      for (let i = 0; i < registerFile.length; i++) {
+        if (registerFile[i].regname === parts[1]) {
           reg1 = registerFile[i].value;
-          
-        }else if (registerFile[i].regname === parts[2]) {
+        } else if (registerFile[i].regname === parts[2]) {
           reg2 = registerFile[i].value;
         }
       }
 
       if (reg1 !== reg2) {
-      // Insert logic for BNE
-      setCounter(parseInt(parts[3]));
-      console.log("counter", counter);
+        // Insert logic for BNE
+        setCounter(parseInt(parts[3]));
+        console.log("counter", counter);
 
-        for(let i=parseInt(parts[3]); i<instructions.length; i++){
+        for (let i = parseInt(parts[3]); i < instructions.length; i++) {
           instructions[i].issued = false;
         }
       }
-      
-
-      
-
-
-    }else if (["BEQ"].includes(opcode)) {
-      let reg1=0;
-      let reg2=0;
-      for(let i = 0; i < registerFile.length; i++) {
-        if(registerFile[i].regname === parts[1]) {
+    } else if (["BEQ"].includes(opcode)) {
+      let reg1 = 0;
+      let reg2 = 0;
+      for (let i = 0; i < registerFile.length; i++) {
+        if (registerFile[i].regname === parts[1]) {
           reg1 = registerFile[i].value;
-          
-        }else if (registerFile[i].regname === parts[2]) {
+        } else if (registerFile[i].regname === parts[2]) {
           reg2 = registerFile[i].value;
         }
       }
 
       if (reg1 === reg2) {
-      // Insert logic for BEQ
-      setCounter(parseInt(parts[3]));
-      console.log("counter", counter);
-      for(let i=parseInt(parts[3]); i<instructions.length; i++){
-        instructions[i].issued = false;
+        // Insert logic for BEQ
+        setCounter(parseInt(parts[3]));
+        console.log("counter", counter);
+        for (let i = parseInt(parts[3]); i < instructions.length; i++) {
+          instructions[i].issued = false;
+        }
       }
-      }
-
     }
-
-
-
-
   }
 
   const nextCycle = async () => {
@@ -1029,6 +1116,7 @@ const Tomasulo = () => {
       } else {
         console.log("cache", cache);
         issue();
+
         checkWriteBack();
         executeInstructions();
       }

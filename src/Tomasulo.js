@@ -387,6 +387,10 @@ const Tomasulo = () => {
         registerFile[i].qi = 0;
 
         for (let i = 0; i < addSubFloat.length; i++) {
+          console.log("addSubFloat[i].qj", addSubFloat[i].qj);
+          console.log("resName", resName);
+          console.log("addSubFloat[i].qk", addSubFloat[i].qk);
+          
           if (addSubFloat[i].qj === resName) {
             addSubFloat[i].qj = "";
             addSubFloat[i].vj = wb.value;
@@ -441,6 +445,7 @@ const Tomasulo = () => {
           store[wb.index].opcode = "";
           store[wb.index].v = 0;
         } else if (wb.registerationState === "addSubFloat") {
+          console.log("addddddddd: ", wb);
           addSubFloat[wb.index].busy = false;
           addSubFloat[wb.index].opcode = "";
           addSubFloat[wb.index].vj = "";
@@ -477,31 +482,25 @@ const Tomasulo = () => {
 
   const checkWriteBack = () => {
     if (wb.length === 0) {
+      console.log("wb is empty");
       return;
+    }
+
+    for(let i=0; i<wb.length; i++){
+      console.log("wb[i] wa7da wa7da", wb[i]);
     }
 
     console.log("wbbbbbbbbb", wb);
     let arrayArray = [];
 
     let bool = false;
+    let indexCommon = 0;
+    arrayArray.push(wb[wb.length-1]);
 
-    for (let i = 0; i < wb.length; i++) {
-      if (i < wb.length - 1 && wb[i].cycle === wb[i + 1].cycle) {
-        console.log("wb[i]", wb[i]);
-        arrayArray.push(wb[i]);
-        wb.splice(i, 1);
-        bool = true;
-      }
-    }
-    if (bool) {
-      arrayArray.push(wb[0]);
-      wb.splice(0, 1);
-    } else {
-      arrayArray.push(wb[0]);
-      wb.splice(0, 1);
-    }
 
+    console.log("yaaaaaaa");
     if (arrayArray.length > 1) {
+      console.log("shit 1",arrayArray);
       let arrayCounter = new Array(arrayArray.length);
       for (let j = 0; j < arrayArray.length; j++) {
         const regName = arrayArray[j].regName;
@@ -550,9 +549,11 @@ const Tomasulo = () => {
         arrayCounter[j] = counter;
       }
 
-      for(let i=0; i<arrayArray.length; i++){
-        console.log("shit");
-        console.log(arrayArray[i]);
+
+
+      for(let i=0; i<arrayCounter.length; i++){
+        console.log("shit 2");
+        console.log(arrayCounter[i]);
       }
 
       let max = arrayCounter[0];
@@ -571,11 +572,18 @@ const Tomasulo = () => {
             }
         }
       }
-
+      wb.splice(index, 1);
       writebackResults(arrayArray[index]);
     } else {
+      console.log("arrayArray", arrayArray);
       if (arrayArray.length > 0) {
+        console.log("arrayArray msh fady ya welad el gazma");
+        
+        wb.splice(0, 1);
         writebackResults(arrayArray[0]);
+      }
+      else{
+        console.log("aaaaaaaaaaaaaaaaaaa");
       }
     }
   };
@@ -1166,9 +1174,8 @@ const Tomasulo = () => {
       } else {
         console.log("cache", cache);
         issue();
-
-        checkWriteBack();
         executeInstructions();
+        checkWriteBack();
       }
     }
   };

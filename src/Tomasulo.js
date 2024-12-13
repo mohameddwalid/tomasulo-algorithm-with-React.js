@@ -63,7 +63,6 @@ const Tomasulo = () => {
     "BEQ",
   ];
   // Function to create memory blocks with sequential addressing
-
   const createMemory = (blockSize) => {
     let currentAddress = 0;
 
@@ -71,14 +70,32 @@ const Tomasulo = () => {
       blockNumber: blockIndex,
       block: Array.from({ length: blockSize }, (_, index) => ({
         index,
-        address: currentAddress++,
-        value: index,
+        address: currentAddress++, // Sequential addressing
+        value: 1, // Default value for each address
       })),
     }));
   };
 
   // Example usage:
-  const memory = createMemory(blockSize);
+  // Initialize memory as a state
+  const [memory, setMemory] = useState(() => createMemory(blockSize));
+
+  const updateMemory = (address, newValue) => {
+    setMemory((prevMemory) =>
+      prevMemory.map((block) => {
+        if (block.block.some((entry) => entry.address === address)) {
+          return {
+            ...block,
+            block: block.block.map((entry) =>
+              entry.address === address ? { ...entry, value: newValue } : entry
+            ),
+          };
+        }
+        return block;
+      })
+    );
+  };
+
   console.log("Memory", memory);
 
   const [wb, setwb] = useState([
@@ -150,7 +167,7 @@ const Tomasulo = () => {
       { length: parseInt(loadRows) },
       (_, index) => ({
         name: `L${index}`,
-        opcode:'',
+        opcode: "",
         busy: false,
         address: "",
         qi: "",
@@ -166,14 +183,14 @@ const Tomasulo = () => {
       { length: parseInt(storeRows) },
       (_, index) => ({
         name: `S${index}`,
-        opcode:'',
+        opcode: "",
         busy: false,
         qi: "",
         address: "",
         latency: -1,
         instruction: 0,
         issueCycle: 0,
-        v:0
+        v: 0,
       })
     );
 
@@ -258,9 +275,8 @@ const Tomasulo = () => {
       console.log("inst", inst);
       const opcode = inst.instruction.split(" ")[0]; // Extract opcode
       const latency = latencies[opcode] || ""; // Get latency for the opcode, or default to ''
-      
+
       return { ...inst, value: latency }; // Assign latency to value field
-    
     });
 
     // Update state with instructions containing latency values
@@ -269,21 +285,21 @@ const Tomasulo = () => {
   };
 
   const handleLatencyChange = (opcode, latency) => {
-    console.log('opcode',opcode);
-    console.log('latency',latency);
+    console.log("opcode", opcode);
+    console.log("latency", latency);
 
     // Update the latencies mapping
     setLatencies((prevLatencies) => ({
       ...prevLatencies,
       [opcode]: latency,
     }));
-    console.log('latencyyy',latencies);
+    console.log("latencyyy", latencies);
     // Recalculate latencies for instructions
     setInstructions((prevInstructions) =>
       prevInstructions.map((inst) => {
         const instOpcode = inst.instruction.split(" ")[0];
         if (instOpcode === opcode) {
-          console.log('ana da5lt henaa',instOpcode,opcode,latency);
+          console.log("ana da5lt henaa", instOpcode, opcode, latency);
           return { ...inst, value: latency };
         }
         return inst;
@@ -483,6 +499,8 @@ const Tomasulo = () => {
     let value = 0;
 
     const targetAddress = parseInt(parts[2], 10);
+
+    const storeAddress = parseInt(parts[2], 10);
     let temp = [
       {
         address: targetAddress, // Target address
@@ -642,18 +660,28 @@ const Tomasulo = () => {
 
       console.log("Temp values:", temp);
       console.log("Updated cache:", cache);
-    } else if (opcode === "SW" || opcode === "S.S") {
-      // Insert logic for SW
-      
-    } else if (opcode === "SD" || opcode === "S.D") {
-      // Insert logic for SD
-    
-    } else if (opcode === "BNE") {
-      // Insert logic for BNE
-     
-    } else if (opcode === "BEQ") {
-      // Insert logic for BEQ
-    
+    } else if (opcode === "SW" || opcode === "S.S" || opcode === "S.D" || opcode === "SD") { 
+      for (let i = 0; i < registerFile.length; i++) {
+        if (registerFile[i].regname === parts[1]) {
+          value = registerFile[i].value;
+        }
+      }
+
+      console.log("Value to store:", value);
+      console.log("Store address:", storeAddress);
+
+      updateMemory(storeAddress, value);
+
+      for (let j = 0; j < cache.length; j++) {
+        for (let i = 0; i < cache[j].block.length; i++) {
+          if (cache[j].block[i].address === storeAddress) {
+            cache[j].block[i].value = value;
+          }
+        }
+      }
+      console.log("Cache updated with store word.", cache);
+      console.log("Memory updated with store word.", memory);
+
     } else {
       return null;
     }
@@ -736,21 +764,19 @@ const Tomasulo = () => {
             ALU("load", i, load[i].instruction);
           }
         }
-
       }
     }
-    for(let i=0;i<store.length;i++){
-      if(store[i].busy && store[i].issueCycle < cycle ){
-        if(store[i].qi===''){
-          store[i].latency=store[i].latency-1;
+    for (let i = 0; i < store.length; i++) {
+      if (store[i].busy && store[i].issueCycle < cycle) {
+        if (store[i].qi === "") {
+          store[i].latency = store[i].latency - 1;
           console.log("store[i].latency", store[i].latency);
-          if(store[i].latency===0){
+          if (store[i].latency === 0) {
             ALU("store", i, store[i].instruction);
             console.log("d5alt ALU  ");
-
           }
         }
-      } 
+      }
     }
   };
 
@@ -823,6 +849,7 @@ const Tomasulo = () => {
           setCounter(counter + 1);
           break; // Exit after assigning to a functional unit
         }
+        console.log("Belticket");
       }
     } else if (["MUL.S", "MUL.D", "DIV.S", "DIV.D"].includes(opcode)) {
       console.log("Opcode identified:", opcode);
@@ -924,13 +951,12 @@ const Tomasulo = () => {
           store[i].opcode = opcode;
           store[i].latency = instructions[counter].value;
           for (let j = 0; j < registerFile.length; j++) {
-            
             if (registerFile[j].regname === parts[1]) {
               if (registerFile[j].qi === 0) {
                 store[i].v = registerFile[j].value;
-              }else{
+              } else {
                 store[i].qi = registerFile[j].qi;
-              }   
+              }
             }
           }
           store[i].address = parts[2];
@@ -938,8 +964,58 @@ const Tomasulo = () => {
           break;
         }
       }
-    } else if (["BNE", "BEQ"].includes(opcode)) {
+    } else if (["BNE"].includes(opcode)) {
+      let reg1=0;
+      let reg2=0;
+      for(let i = 0; i < registerFile.length; i++) {
+        if(registerFile[i].regname === parts[1]) {
+          reg1 = registerFile[i].value;
+          
+        }else if (registerFile[i].regname === parts[2]) {
+          reg2 = registerFile[i].value;
+        }
+      }
+
+      if (reg1 !== reg2) {
+      // Insert logic for BNE
+      setCounter(parseInt(parts[3]));
+      console.log("counter", counter);
+
+        for(let i=parseInt(parts[3]); i<instructions.length; i++){
+          instructions[i].issued = false;
+        }
+      }
+      
+
+      
+
+
+    }else if (["BEQ"].includes(opcode)) {
+      let reg1=0;
+      let reg2=0;
+      for(let i = 0; i < registerFile.length; i++) {
+        if(registerFile[i].regname === parts[1]) {
+          reg1 = registerFile[i].value;
+          
+        }else if (registerFile[i].regname === parts[2]) {
+          reg2 = registerFile[i].value;
+        }
+      }
+
+      if (reg1 === reg2) {
+      // Insert logic for BEQ
+      setCounter(parseInt(parts[3]));
+      console.log("counter", counter);
+      for(let i=parseInt(parts[3]); i<instructions.length; i++){
+        instructions[i].issued = false;
+      }
+      }
+
     }
+
+
+
+
   }
 
   const nextCycle = async () => {
@@ -974,12 +1050,10 @@ const Tomasulo = () => {
 
         {type === "store" && (
           <>
-           <td style={tableCellStyle}>{row.opcode}</td>
+            <td style={tableCellStyle}>{row.opcode}</td>
             <td style={tableCellStyle}> {row.address}</td>
             <td style={tableCellStyle}> {row.v}</td>
             {/* <td style={tableCellStyle}> {row.qi}</td> */}
-
-
           </>
         )}
         {type === "load" && (

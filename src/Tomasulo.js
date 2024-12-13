@@ -31,6 +31,7 @@ const Tomasulo = () => {
   const [registerFile, setRegisterFile] = useState([]);
   // const [cache,setCache]=useState([]);
   // Simulation state
+  let BoolHena=false;
   const [cycle, setCycle] = useState(0);
   const [counter, setCounter] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -46,7 +47,7 @@ const Tomasulo = () => {
   ];
   // Function to create memory blocks with sequential addressing
 
-const createMemory = (blockSize) => {
+const createMemory = (blockSize) => { 
   let currentAddress = 0;
   
   return Array.from({ length: 10 }, (_, blockIndex) => ({
@@ -54,7 +55,7 @@ const createMemory = (blockSize) => {
     block: Array.from({ length: blockSize }, (_, index) => ({
       index,
       address: currentAddress++,
-      value: ''
+      value: index
     }))
   }));
 };
@@ -69,18 +70,15 @@ console.log("Memory",memory);
     registerationState: '',
     index: 0
   }]);
+  // const block = Array.from({ length: parseInt(blockSize) }, (_, index) => ({
+  //   address: '',
+  //   value: '',
+  // }));
+  let cache = Array.from({ length: 0 }, (_, index) => ({
+     
+  }));
+  
   const initializeTables = () => {
-    let countBlock=-1;
-    countBlock=countBlock+1;
-    const block = Array.from({ length: parseInt(blockSize) }, (_, index) => ({
-      address: '',
-      value: '',
-    }));
-    const cache = Array.from({ length: parseInt(blockSize) }, (_, index) => ({
-       block
-    }));
-    console.log('Cache',cache);
-    
 // console.log('block',block);
     // console.log('cache',cache);    
     const emptyAddSubFloat = Array.from({ length: parseInt(addSubFloatRows) }, (_, index) => ({
@@ -116,17 +114,27 @@ console.log("Memory",memory);
       qj: '',
       qk: '',
       A: '',
+      latency: -1,
+      instruction: 0,
     }));
     const emptyLoad = Array.from({ length: parseInt(loadRows) }, (_, index) => ({
       name: `L${index}`,
       busy: false,
       address: '',
+      qi:'',
+      latency: -1,
+      instruction: 0,
+      loop:false,
+      bool:false,
+      counter:0
     }));
     const emptyStore = Array.from({ length: parseInt(storeRows) }, (_, index) => ({
       name: `S${index}`,
       busy: false,
       qi: '',
       address: '',
+      latency: -1,
+      instruction: 0,
     }));
 
     setAddSubFloat(emptyAddSubFloat);
@@ -135,6 +143,8 @@ console.log("Memory",memory);
     setLoad(emptyLoad);
     setStore(emptyStore);
   };
+  // console.log('block',block);
+  
   useEffect(() => {
     if (isRunning) {
       simulateCycle();
@@ -392,6 +402,7 @@ const handleLatencyChange = (opcode, latency) => {
   }
   
   function ALU(registerationState, index, instructionIndex) {
+
     let values= getValues(instructionIndex);
     console.log("tempro",values);
     console.log('instruction',instructions);
@@ -427,48 +438,92 @@ const handleLatencyChange = (opcode, latency) => {
     } else if (opcode === 'DIV.S') {
       value=parseInt(values.vj,10)/parseInt(values.vk,10);
     } else if (opcode === 'LW') {
-      //handle when cache is full
-      if(cacheSize>0){
+    
+      if(cache.length>0){
         let temp=[];
         let bool =false;
-        for(let i=0;i<cacheSize;i++){
-         for (let j=0;j<caches[i].block.length;j++){
-          if(caches[i].block[j].address===parts[2]){
-              temp.push(caches[i].block[j].value);
-              temp.push(caches[i].block[j+1].value);
-              temp.push(caches[i].block[j+2].value);
-              temp.push(caches[i].block[j+3].value);
-              bool=true;
-              break;
-          }
+        let emptyTempBoolean=false;
+        for(let i=0;i<cache.length;i++){
+          console.log('mfrod mtd5olsh henaa');
+          
+         for (let j=0;j<cache[i].block.length;j++){
+          if(cache[i].block[j].address===parts[2]){
+            for (let x=0;x<cache.length;x++){
+              for(let y=0;y<blockSize;y++){
+                if(cache[x].block[y].address===parseInt(parts[2])){
+                  console.log('cache block in Alu Value',cache[x].block[y].value);
+                  temp.push(cache[x].block[y].value);
+                  temp.push(cache[x].block[y+1].value);
+                  temp.push(cache[x].block[y+2].value);
+                  temp.push(cache[x].block[y+3].value);
+                }
+              }
+
+            }
+          }  
          }
          if(bool){
           break;
          }
         }
-      }else { 
-        let temp=[];
+        if(temp.length===0){
+
+          emptyTempBoolean=true; 
+        }
+        if(emptyTempBoolean){
+          for (let j=0;j=memory.length;j++){
+            for (let k=0;k<memory[j].block.length;k++){
+                if(  memory[j].block[k].address===parts[2]){
+                  cache.push(memory[j]);
+                  temp.push(cache[j].block[k].value);
+                  temp.push(cache[j].block[k+1].value);
+                  temp.push(cache[j].block[k+2].value);
+                  temp.push(cache[j].block[k+3].value);
+                  bool=true;
+                  break;
+                }
+            }
+          }
+        }
+        console.log("temp when cache isn't empty",temp);
+      } else { 
+       let temp=[];
         let bool =false;
-        for (let j=0;j=memory.length;j++){
+        for (let j=0;j<memory.length;j++){
+          console.log('memory Block',memory[j]);
           for (let k=0;k<memory[j].block.length;k++){
-              if(  memory[j].block[k].address===parts[2]){
-                caches[j]=memory[j];
-                temp.push(caches[j].block[k].value);
-                temp.push(caches[j].block[k+1].value);
-                temp.push(caches[j].block[k+2].value);
-                temp.push(caches[j].block[k+3].value);
-                bool=true;
-                break;
+            console.log('memory block address 4',memory[j].block[k].address);
+            console.log('parts',parseInt(parts[2]));
+              if( memory[j].block[k].address===parseInt(parts[2])){
+                console.log('henaa');
+                cache.push(memory[j]);
+                console.log('cache in Alu',cache);
+                for (let x=0;x<cache.length;x++){
+                  for(let y=0;y<blockSize;y++){
+                    if(cache[x].block[y].address===parseInt(parts[2])){
+                      console.log('cache block in Alu Value',cache[x].block[y].value);
+                      temp.push(cache[x].block[y].value);
+                      temp.push(cache[x].block[y+1].value);
+                      temp.push(cache[x].block[y+2].value);
+                      temp.push(cache[x].block[y+3].value);
+                    }
+                  }
+
+                }
+             
               }
+              // console.log('temp',temp);
+              
           }
           if(bool){
             break;
           }
         }
-        console.log(temp);
-      }
-      
-        return "LW instruction translated";
+        console.log("memory After",memory);
+        console.log("Cache After",cache);
+        console.log("Temp when cache is empty",temp);
+       };
+       console.log("Cache b3d load",cache);
     } else if (opcode === 'LD') {
         // Insert logic for LD
         return "LD instruction translated";
@@ -526,6 +581,8 @@ const handleLatencyChange = (opcode, latency) => {
           }
         }
       }
+    }
+    for(let i=0; i<mulDivFloat.length;i++){
       if(mulDivFloat[i].busy){
         console.log(mulDivFloat[i].qj);
         if(mulDivFloat[i].qj === '' && mulDivFloat[i].qk === ''){
@@ -535,13 +592,42 @@ const handleLatencyChange = (opcode, latency) => {
           console.log("mulDivFloat[i].latency",mulDivFloat[i].latency);
           if(mulDivFloat[i].latency == 0){
             console.log("Fadyaa");
-            ALU(mulDivFloat[i].instruction);
+            ALU('mulDivFloat',i,mulDivFloat[i].instruction);
           }
         }
       }
     }
-
+    for(let i=0; i<load.length;i++){
+      if(load[i].busy){
+        if(load[i].qi === '' ){
+          console.log("load",load[i].loop);
+          
+          if(load[i].loop == false){
+          for(let i=0;i<cache.length;i++){
+            console.log('da5lnaa al for loop mara',i);
+            for (let j=0;j<cache[i].block.length;j++){
+             if(cache[i].block[j].address===load[i].address){
+                load[i].bool=true;
+             }  
+            }
+          }
+          load[i].loop=true;
+       }
+     }
+     if (load[i].bool==false && load[i].counter===0){
+      load[i].latency=2;
+      load[i].counter++;
+    }
+    load[i].latency = load[i].latency - 1;
+    console.log("load[i].latency",load[i].latency);
+    if (load[i].latency===0){
+      console.log('d5alt henaa kam maraa');
+      ALU("load",i,load[i].instruction); 
+    }
+    }
+    
   };
+};
 
   function issue() {
     console.log("Issued in Cycle: ", cycle);
@@ -659,6 +745,8 @@ const handleLatencyChange = (opcode, latency) => {
       }
       } else if (['LW', 'L.D',  'L.S', 'LD', 'LW'].includes(opcode)) { 
         console.log('d5alnaa hena al Load');
+        console.log("parts charAt",parts[2].charAt(0));
+        
         for (let i = 0; i < load.length; i++) {
           if (!load[i].busy){
             console.log('not busy');
@@ -670,7 +758,12 @@ const handleLatencyChange = (opcode, latency) => {
             console.log('load array',load);
             console.log('load counter',load[i].instruction);
             load[i].busy=true;
-            load[i].address=parts[2];                  
+            if(parts[2].charAt(0)==='R'){
+              load[i].qi=parts[2];
+            }else {
+              load[i].address=parts[2]; 
+            }
+                           
             for (let j = 0; j < registerFile.length; j++) {  
               console.log("hereee",parts[1]);
               if (registerFile[j].regname === parts[1]) {
@@ -713,6 +806,7 @@ const handleLatencyChange = (opcode, latency) => {
         issue();
       }
       else{
+        console.log('cache',cache);
         issue();
         checkWriteBack();
         executeInstructions();
@@ -744,6 +838,8 @@ const handleLatencyChange = (opcode, latency) => {
            {type === 'load' && (
           <>
           <td style={tableCellStyle}> {row.address}</td>
+          <td style={tableCellStyle}> {row.qi}</td>
+
         </>)
           }
         <td style={tableCellStyle}>{row.A || row.qi || ''}</td>

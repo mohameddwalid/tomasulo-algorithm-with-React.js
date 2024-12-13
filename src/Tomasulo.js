@@ -497,8 +497,7 @@ const Tomasulo = () => {
 
     let bool = false;
     let indexCommon = 0;
-    arrayArray.push(wb[wb.length-1]);
-
+    arrayArray.push(wb[0]);
 
     console.log("yaaaaaaa");
     if (arrayArray.length > 1) {
@@ -580,7 +579,7 @@ const Tomasulo = () => {
       console.log("arrayArray", arrayArray);
       if (arrayArray.length > 0) {
         console.log("arrayArray msh fady ya welad el gazma");
-        wb.splice(wb[wb.length-1], 1);
+        wb.splice(wb[0], 1);
         writebackResults(arrayArray[0]);
       }
       else{

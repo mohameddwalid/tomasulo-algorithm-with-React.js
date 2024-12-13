@@ -127,7 +127,8 @@ console.log("Memory",memory);
       instruction: 0,
       loop:false,
       bool:false,
-      counter:0
+      counter:0,
+      issueCycle:0
     }));
     const emptyStore = Array.from({ length: parseInt(storeRows) }, (_, index) => ({
       name: `S${index}`,
@@ -540,7 +541,7 @@ const executeInstructions = () => {
 
         if (addSubFloat[i].latency === 0) {
           ALU("addSubFloat", i, addSubFloat[i].instruction);
-          addSubFloat[i].busy = false;
+       
         }
       }
     }
@@ -555,7 +556,7 @@ const executeInstructions = () => {
 
         if (mulDivFloat[i].latency === 0) {
           ALU("mulDivFloat", i, mulDivFloat[i].instruction);
-          mulDivFloat[i].busy = false;
+
         }
       }
     }
@@ -564,61 +565,40 @@ const executeInstructions = () => {
 
   
 
-    // Track the block currently being accessed and the active load
-    let activeBlock = null; // Tracks the block currently being executed
-    let activeLoadCompleted = false; // Tracks if the current load completed in this cycle
-  
-    for (let i = 0; i < load.length; i++) {
-      if (load[i].busy) {
-        const currentAddress = parseInt(load[i].address, 10);
-  
-        // Check if this load depends on a previous one
-        if (
-          activeBlock === null || // No active load
-          !areInSameBlock(activeBlock, currentAddress, blockSize) // Independent block
-        ) {
-          // Independent block: Allow execution
-          activeBlock = Math.floor(currentAddress / blockSize) * blockSize;
-  
-          if (!load[i].loop) {
-            // Check cache for the requested address
-            for (let j = 0; j < cache.length; j++) {
-              for (let k = 0; k < cache[j].block.length; k++) {
-                if (cache[j].block[k].address === currentAddress) {
-                  load[i].bool = true; // Cache hit
-                }
-              }
+    
+    for(let i=0; i<load.length;i++){
+      if(load[i].busy && load[i].issueCycle<cycle){
+        if(load[i].qi === '' ){
+          console.log("load",load[i].loop);
+          
+          if(load[i].loop == false){
+          for(let i=0;i<cache.length;i++){
+            console.log('da5lnaa al for loop mara',i);
+            for (let j=0;j<cache[i].block.length;j++){
+            if(cache[i].block[j].address===load[i].address){
+                load[i].bool=true;
+                console.log("load[i].bool",load[i].bool);
+            }  
             }
-            load[i].loop = true;
           }
-  
-          if (!load[i].bool && load[i].counter === 0) {
-            // Cache miss: Set latency to 2
-            load[i].latency = 2;
-            load[i].counter++;
-          }
-  
-          load[i].latency -= 1;
-          console.log(`Load ${load[i].name} Latency:`, load[i].latency);
-  
-          if (load[i].latency === 0) {
-            // Load completes in the current cycle
-            ALU("load", i, load[i].instruction);
-            load[i].busy = false; // Mark as completed
-            activeLoadCompleted = true;
-            console.log(`Load ${load[i].name} completed in cycle ${cycle}`);
-          }
-        } else if (!activeLoadCompleted) {
-          // Dependent block: Delay execution
-          console.log(
-            `Load ${load[i].name} delayed due to block conflict on address ${currentAddress}`
-          );
-        }
+          load[i].loop=true;
+          console.log("loooooooppppp",load[i].loop);
       }
     }
-  
-  
-  
+    if (load[i].bool===false && load[i].counter===0){
+      load[i].latency=2;
+      load[i].counter++;
+    }
+    load[i].latency = load[i].latency - 1;
+    console.log("load[i].latency",load[i].latency);
+    if (load[i].latency===0){
+      console.log('d5alt henaa kam maraa');
+      ALU("load",i,load[i].instruction); 
+    }
+    }
+    
+  };
+    
   
 };
 
@@ -751,6 +731,7 @@ const executeInstructions = () => {
             instructions[counter].resName=load[i].name;
             console.log('inst name',instructions[counter]);
             load[i].instruction = counter;
+            load[i].issueCycle=cycle;
             console.log('load array',load);
             console.log('load counter',load[i].instruction);
             load[i].busy=true;

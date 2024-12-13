@@ -270,35 +270,53 @@ const Tomasulo = () => {
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
+    console.log("file", file);
+  
     setInstructionFile(file);
-
+  
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target.result;
       const lines = content.split("\n");
-
+  
+      console.log("lines", lines);
+  
+      // Parse the input instructions
       const parsedInstructions = lines
         .map((line) => {
-          const cleanLine = line.replace(/\r/g, "");
-          const parts = cleanLine.trim().split(" ");
+          const cleanLine = line.replace(/\r/g, "").trim();
+          const parts = cleanLine.split(" ");
+          console.log("parts", parts);
+  
+          // Add opcode to inserted opcodes
+          const opcode = parts[0];
+          setInsertedOpCodes((prevOpCodes) => [...prevOpCodes, opcode]);
+  
+          // Ensure the line has valid instruction format
           if (parts.length >= 3 && parts.length <= 4) {
-            return { instruction: cleanLine, value: "" };
+            return {
+              instruction: cleanLine,
+              value: "",
+              issued: false,
+              resName: "",
+            }; // Initialize value, issued, and resName
           }
-
-          return null;
+  
+          return null; // Ignore invalid lines
         })
         .filter(Boolean);
-
+  
+      // Set parsed instructions to state
       setInstructions((prevInstructions) => [
         ...prevInstructions,
         ...parsedInstructions,
       ]);
-
+  
+      // Extract and process registers
       const allRegisters =
-        lines.flatMap((line) => line.match(/R\d+/g) || line.match(/F\d+/g)) ||
-        [];
+        lines.flatMap((line) => line.match(/R\d+/g) || line.match(/F\d+/g)) || [];
       const uniqueRegisters = [...new Set(allRegisters)];
-
+  
       setRegisterFile((prevRegisterFile) => {
         const existingRegisterNames = new Set(
           prevRegisterFile.map((reg) => reg.regname)
@@ -313,11 +331,12 @@ const Tomasulo = () => {
         return [...prevRegisterFile, ...newRegisterFile];
       });
     };
-
+  
     if (file) {
       reader.readAsText(file);
     }
   };
+  
 
   const handleLatencyInput = () => {
     // Dynamically populate latency values based on opcode
@@ -364,39 +383,40 @@ const Tomasulo = () => {
     for (let i = 0; i < registerFile.length; i++) {
       if (registerFile[i].regname === wb.regName) {
         registerFile[i].value = wb.value;
+        let resName = registerFile[i].qi;
         registerFile[i].qi = 0;
 
         for (let i = 0; i < addSubFloat.length; i++) {
-          if (addSubFloat[i].qj === wb.resName) {
+          if (addSubFloat[i].qj === resName) {
             addSubFloat[i].qj = "";
             addSubFloat[i].vj = wb.value;
           }
-          if (addSubFloat[i].qk === wb.resName) {
+          if (addSubFloat[i].qk === resName) {
             addSubFloat[i].qk = "";
             addSubFloat[i].vk = wb.value;
           }
         }
 
         for (let i = 0; i < mulDivFloat.length; i++) {
-          if (mulDivFloat[i].qj === wb.resName) {
+          if (mulDivFloat[i].qj === resName) {
             mulDivFloat[i].qj = "";
             mulDivFloat[i].vj = wb.value;
           }
-          if (mulDivFloat[i].qk === wb.resName) {
+          if (mulDivFloat[i].qk === resName) {
             mulDivFloat[i].qk = "";
             mulDivFloat[i].vk = wb.value;
           }
         }
 
         for (let i = 0; i < load.length; i++) {
-          if (load[i].qi === wb.resName) {
+          if (load[i].qi === resName) {
             load[i].qi = "";
             load[i].address = wb.value;
           }
         }
 
         for (let i = 0; i < store.length; i++) {
-          if (store[i].qi === wb.resName) {
+          if (store[i].qi === resName) {
             store[i].qi = "";
             store[i].address = wb.value;
           }
@@ -430,7 +450,7 @@ const Tomasulo = () => {
           addSubFloat[wb.index].A = "";
           addSubFloat[wb.index].instruction = 0;
           addSubFloat[wb.index].latency = -1;
-        } else if (wb.registerationState === "MulDivFloat") {
+        } else if (wb.registerationState === "mulDivFloat") {
           mulDivFloat[wb.index].busy = false;
           mulDivFloat[wb.index].opcode = "";
           mulDivFloat[wb.index].vj = "";
@@ -467,6 +487,7 @@ const Tomasulo = () => {
 
     for (let i = 0; i < wb.length; i++) {
       if (i < wb.length - 1 && wb[i].cycle === wb[i + 1].cycle) {
+        console.log("wb[i]", wb[i]);
         arrayArray.push(wb[i]);
         wb.splice(i, 1);
         bool = true;
@@ -529,12 +550,25 @@ const Tomasulo = () => {
         arrayCounter[j] = counter;
       }
 
+      for(let i=0; i<arrayArray.length; i++){
+        console.log("shit");
+        console.log(arrayArray[i]);
+      }
+
       let max = arrayCounter[0];
       let index = 0;
       for (let i = 0; i < arrayCounter.length; i++) {
         if (arrayCounter[i] > max) {
           max = arrayCounter[i];
           index = i;
+        }
+        else if(arrayCounter[i] === max){
+            if(arrayArray[i].index < arrayArray[index].index){
+              index = i;
+            }
+            else{
+              index = index;
+            }
         }
       }
 
@@ -592,9 +626,21 @@ const Tomasulo = () => {
     console.log("addsub float", addSubFloat);
     const regName = parts[1];
     let value = 0;
-
-    const targetAddress = parseInt(parts[2], 10);
-
+    let targetAddress = 0;
+    
+    if(opcode === "LW" || opcode === "LD" || opcode === "L.S" || opcode === "L.D" || opcode === "SW" || opcode === "SD" || opcode === "S.S" || opcode === "S.D"){
+      if(parts[2].charAt(0) === 'R' || parts[2].charAt(0) === 'F'){
+        for(let i=0; i<registerFile.length; i++){
+          if(registerFile[i].regname === parts[2]){
+            targetAddress = parseInt(registerFile[i].value);
+          }
+        }
+        
+      }
+      else{
+        targetAddress = parseInt(parts[2], 10);
+      }
+    }
     const storeAddress = parseInt(parts[2], 10);
     let temp = [
       {
@@ -950,7 +996,6 @@ const Tomasulo = () => {
           setCounter(counter + 1);
           break; // Exit after assigning to a functional unit
         }
-        console.log("Belticket");
       }
     } else if (["MUL.S", "MUL.D", "DIV.S", "DIV.D"].includes(opcode)) {
       console.log("Opcode identified:", opcode);
@@ -1019,8 +1064,13 @@ const Tomasulo = () => {
           load[i].opcode = opcode;
           load[i].latency = instructions[counter].value;
 
-          if (parts[2].charAt(0) === "R") {
-            load[i].qi = parts[2];
+          if (parts[2].charAt(0) === "R" || parts[2].charAt(0) === "F") {
+            for (let j = 0; j < registerFile.length; j++) {
+            if (registerFile[j].regname === parts[2]) {
+              console.log("Load name", load[i].name);
+              load[i].qi = registerFile[j].qi;
+            }
+          }
           } else {
             load[i].address = parts[2];
           }
@@ -1306,6 +1356,7 @@ const Tomasulo = () => {
               <th style={tableHeaderStyle}>Busy</th>
               <th style={tableHeaderStyle}>Opcode</th>
               <th style={tableHeaderStyle}>Address</th>
+              <th style={tableHeaderStyle}>qi</th>
             </tr>
           </thead>
           <tbody>{renderRows(load, "load")}</tbody>
